@@ -1,66 +1,109 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+Step-by-step setup (beginner-friendly)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+Open a terminal (PowerShell on Windows, Terminal on macOS, or WSL on Windows).
 
-## About Laravel
+Clone the repo
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+# HTTPS (easy, no SSH key needed)
+git clone https://github.com/AllukaZ0ldyck/delivery-module_ver2.git
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+# OR SSH (if you set up SSH keys)
+git clone git@github.com:AllukaZ0ldyck/delivery-module_ver2.git
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
 
-## Learning Laravel
+Enter the project folder
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework.
+cd delivery-module_ver2
 
-You may also try the [Laravel Bootcamp](https://bootcamp.laravel.com), where you will be guided through building a modern Laravel application from scratch.
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Install PHP dependencies (Composer)
 
-## Laravel Sponsors
+composer install
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
 
-### Premium Partners
+If Composer asks to create vendor folder or needs auth tokens, follow prompts. If you get memory errors, run:
 
-- **[Vehikl](https://vehikl.com/)**
-- **[Tighten Co.](https://tighten.co)**
-- **[WebReinvent](https://webreinvent.com/)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel/)**
-- **[Cyber-Duck](https://cyber-duck.co.uk)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Jump24](https://jump24.co.uk)**
-- **[Redberry](https://redberry.international/laravel/)**
-- **[Active Logic](https://activelogic.com)**
-- **[byte5](https://byte5.de)**
-- **[OP.GG](https://op.gg)**
+COMPOSER_MEMORY_LIMIT=-1 composer install
 
-## Contributing
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Copy the example environment file
 
-## Code of Conduct
+# macOS / Linux
+cp .env.example .env
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+# Windows (PowerShell)
+copy .env.example .env
 
-## Security Vulnerabilities
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+Edit .env to set your environment variables
+Open .env in a text editor and set your DB settings (example):
 
-## License
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=your_db_name
+DB_USERNAME=your_db_user
+DB_PASSWORD=your_db_password
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+
+If you don’t have a DB yet, create one (e.g., in MySQL: CREATE DATABASE your_db_name;).
+
+Generate the application key
+
+php artisan key:generate
+
+
+This sets APP_KEY in your .env.
+
+Run database migrations (if the project has migrations)
+
+php artisan migrate
+# optionally run seeders if available
+php artisan db:seed
+
+
+If you prefer to refresh everything (danger: deletes data): php artisan migrate:fresh --seed
+
+Install Node packages and compile front-end assets
+
+npm install
+# for development (fast, hot reload)
+npm run dev
+
+# or for production build
+npm run build
+
+
+If npm run dev fails with an OpenSSL / "digital envelope routines" error on Node 17+, set:
+
+macOS / Linux:
+
+export NODE_OPTIONS=--openssl-legacy-provider
+npm run dev
+
+
+Windows (PowerShell):
+
+$env:NODE_OPTIONS="--openssl-legacy-provider"
+npm run dev
+
+
+Create storage symlink (for public uploaded files)
+
+php artisan storage:link
+
+
+Set filesystem / cache permissions (Linux)
+
+sudo chown -R $USER:www-data storage bootstrap/cache
+sudo chmod -R 775 storage bootstrap/cache
+
+
+(Adjust www-data for your web user if different.)
+
+Run the local dev server
+
+php artisan serve
+
+
+Then open http://127.0.0.1:8000 in your browser.
