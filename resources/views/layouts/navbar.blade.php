@@ -1,92 +1,68 @@
 <header class="header">
-	<div class="header-content responsive-wrapper">
-		<div class="header-logo">
-			<a href="#" class="nav-link text-uppercase fw-bold">
-				<img src="{{ asset(config('app.product') === 'novustream' ? 'images/water_logo.webp' : 'images/water_logo.webp') }}" alt="" style="width: 100px;">
-			</a>
-		</div>
-		<div class="header-navigation">
-			<div class="close-icon">
-				<i class='bx bx-x'></i>
-			</div>
-			<nav class="header-navigation-links d-flex gap-4">
-				@can('admin')
-					<a href="{{route('dashboard')}}"> Dashboard </a>
-				@endcan
-				@can('concessionaire')
-					<a href="{{route('account-overview.index')}}"> Account Overview </a>
-					<a href="{{route('account-overview.bills')}}"> Bills & Payment </a>
-				@endcan
-				<!-- @canany(['admin', 'technician'])
-					<div class="dropdown px-0 mx-0">
-						<button class="border-0 bg-transparent dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-							Meter Reading
-						</button>
-						<ul class="dropdown-menu mt-3">
-							<li><a class="dropdown-item" href="{{route('reading.index')}}">Meter Reading</a></li>
-							<li><a class="dropdown-item" href="{{route('reading.report')}}">Reading Report</a></li>
-						</ul>
-					</div>
-				@endcan -->
-				@canany(['admin', 'cashier'])
-					<a href="{{route('payments.index')}}"> Payments </a>
-				@endcanany
-				@can('admin')
-					<div class="dropdown px-0 mx-0">
-						<button class="border-0 bg-transparent dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-							Users
-						</button>
-						<ul class="dropdown-menu mt-3">
-							<li><a class="dropdown-item" href="{{route('roles.index')}}">Roles</a></li>
-							<li><a class="dropdown-item" href="{{route('concessionaires.index')}}">Customers</a></li>
-							<li><a class="dropdown-item" href="{{route('admins.index')}}">Personnels</a></li>
-						</ul>
-					</div>
-					<!-- <div class="dropdown px-0 mx-0">
-						<button class="border-0 bg-transparent dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-							Settings
-						</button>
-						<ul class="dropdown-menu mt-3">
-							<li><a class="dropdown-item" href="{{route('property-types.index')}}">Property Types</a></li>
-							<li><a class="dropdown-item" href="{{route('base-rate.index')}}">Base Rate</a></li>
+    <div class="header-content responsive-wrapper">
+        <!-- Logo -->
+        <div class="header-logo">
+            <a href="#" class="nav-link text-uppercase fw-bold">
+                <img src="{{ asset('images/water_logo.webp') }}" alt="Logo" style="width: 100px;">
+            </a>
+        </div>
 
-							@can('app-novustream')
-								<li><a class="dropdown-item" href="{{route('rates.index')}}">Water Rates</a></li>
-							@endcan
+        <!-- Navigation -->
+        <div class="header-navigation">
+            <div class="close-icon">
+                <i class='bx bx-x'></i>
+            </div>
 
-							<li><a class="dropdown-item" href="{{route('payment-breakdown.index')}}">Payment Breakdown</a></li>
-						</ul>
-					</div> -->
-				@endcan
-			</nav>
-			<div class="header-navigation-links d-flex gap-4">
-				@can('concessionaire')
-					<!-- <a href="{{route('client.support-ticket.create')}}">
-						Submit Ticket
-					</a> -->
-					<a href="{{route('profile.index', ['user_type' => 'concessionaire'])}}">
-						Profile
-					</a>
-				@elsecan('admin')
-				<!-- <a href="{{route('admin.support-ticket.create')}}">
-					Submit Ticket
-				</a> -->
-				<a href="{{route('profile.index', ['user_type' => 'admin'])}}">
-					Profile
-				</a>
-				@endcan
-				<form action="{{ route('auth.logout') }}" method="POST" style="display: inline;" class="logout-form">
-					@csrf
-					<button type="submit" class="border-0 bg-transparent p-0 m-0 align-baseline">Logout</button>
-				</form>
-				<a href="#" class="avatar">
-					<img src="https://assets.codepen.io/285131/hat-man.png" alt="" />
-				</a>
-			</div>
-		</div>
-		<a href="javascript:void(0)" class="button btn-navigate">
-			<i class="ph-list-bold"></i>
-			<span>Menu</span>
-		</a>
-	</div>
+            <nav class="header-navigation-links d-flex gap-4">
+                {{-- Admin Links --}}
+                @can('admin')
+                    <a href="{{ route('admin.dashboard') }}">Dashboard</a>
+                    <a href="{{ route('admin.orders.index') }}">Orders</a>
+                    <a href="{{ route('admin.borrowed-gallons') }}">Borrowed Gallons</a> <!-- Admin's Link to Borrowed Gallons -->
+                    <div class="dropdown px-0 mx-0">
+                        <button class="border-0 bg-transparent dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            Users
+                        </button>
+                        <ul class="dropdown-menu mt-3">
+                            <li><a class="dropdown-item" href="{{ route('roles.index') }}">Roles</a></li>
+                            <li><a class="dropdown-item" href="{{ route('customers.index') }}">Customers</a></li>
+                            <li><a class="dropdown-item" href="{{ route('admins.index') }}">Personnels</a></li>
+                        </ul>
+                    </div>
+                @endcan
+
+                {{-- Customer Links --}}
+                @can('customer')
+                    <a href="{{ route('account-overview.index') }}">Overview</a>
+                    <a href="{{ route('orders.index') }}">My Orders</a>
+                    <a href="{{ route('borrow-gallon.create') }}">Borrow Gallon</a> <!-- Customer's Link to Borrow Gallon -->
+                    <a href="{{ route('borrow-gallon.index') }}">My Borrowed Gallons</a> <!-- Customer's Link to My Borrowed Gallons -->
+                @endcan
+            </nav>
+
+            <!-- Profile / Logout -->
+            <div class="header-navigation-links d-flex gap-4">
+                @can('customer')
+                    <a href="{{ route('profile.index', ['user_type' => 'customer']) }}">Profile</a>
+                @elsecan('admin')
+                    <a href="{{ route('profile.index', ['user_type' => 'admin']) }}">Profile</a>
+                @endcan
+
+                <form action="{{ route('auth.logout') }}" method="POST" style="display:inline;" class="logout-form">
+                    @csrf
+                    <button type="submit" class="border-0 bg-transparent p-0 m-0 align-baseline">Logout</button>
+                </form>
+
+                <a href="#" class="avatar">
+                    <img src="https://assets.codepen.io/285131/hat-man.png" alt="Avatar" />
+                </a>
+            </div>
+        </div>
+
+        <!-- Mobile menu button -->
+        <a href="javascript:void(0)" class="button btn-navigate">
+            <i class="ph-list-bold"></i>
+            <span>Menu</span>
+        </a>
+    </div>
 </header>

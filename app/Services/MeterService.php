@@ -49,19 +49,40 @@ class MeterService {
 
     }
 
-    public static function getPayments(?int $reference_no = null, bool $isPaid = false) {
-        
-        $query = Bill::with('reading')->where('isPaid', $isPaid);
-    
-        if (!is_null($reference_no)) {
-            $query->where('reference_no', $reference_no);
-        }
-    
-        return $query->get();
+    public static function getPayments(?int $userId = null, bool $isPaid = false)
+{
+    $user = $userId ? User::find($userId) : auth()->user();
+
+    if (!$user) {
+        return collect(); // no user
     }
 
+    $accounts = $user->accounts ?? [];
+
+    if ($accounts->isEmpty()) {
+        return collect(); // no linked accounts
+    }
+
+    $bills = collect();
+
+    foreach ($accounts as $account) {
+        $accountBills = Bill::with(['reading', 'breakdown'])
+            ->where('isPaid', $isPaid)
+            ->whereHas('reading', function ($q) use ($account) {
+                $q->where('meter_no', $account->meter_serial_no);
+            })
+            ->latest()
+            ->get();
+
+        $bills = $bills->concat($accountBills);
+    }
+
+    return $bills->sortByDesc('due_date')->values();
+}
+
+
     public function locate(array $payload)
-    {    
+    {
         $account = $this->getAccount($payload['meter_no']);
 
         if (!$account) {
@@ -70,11 +91,11 @@ class MeterService {
                 'message' => 'No client found'
             ];
         }
-    
+
         $previous_reading = Reading::where('meter_no', $account->meter_serial_no)
             ->latest()
             ->first() ?? [];
-    
+
         return [
             'status' => 'success',
             'account' => $account,
@@ -86,7 +107,7 @@ class MeterService {
 
         // Fetch the current bill with reading details
         $current_bill = Bill::with('reading', 'breakdown')->where('reference_no', $reference_no)->first();
-    
+
         if (!$current_bill) {
             return [
                 'status' => 'error',
@@ -96,7 +117,7 @@ class MeterService {
 
         // Get meter number from current bill
         $meter_no = optional($current_bill->reading)->meter_no;
-    
+
         $client = User::with(['accounts.property_types'])
                 ->whereHas('accounts', function ($query) use ($meter_no) {
                     $query->where('meter_serial_no', $meter_no);
@@ -110,13 +131,13 @@ class MeterService {
             ->select('bill.*')
             ->orderBy('bill.created_at', 'desc')
             ->first();
-        
+
         // Prepare base query for unpaid bills
         $unpaidQuery = Bill::with('reading')
             ->where('isPaid', false)
             ->whereHas('reading', function ($query) use ($meter_no) {
                 $query->where('meter_no', $meter_no);
-            });    
+            });
         // Fetch the latest unpaid payment (active payment)
         $active_payment = (clone $unpaidQuery)
             ->latest()
@@ -127,7 +148,7 @@ class MeterService {
         $unpaid_bills = (clone $unpaidQuery)
             ->where('reference_no', '!=', $reference_no)
             ->get();
-    
+
         // Ensure active_payment is null if it matches the current reference_no
         if ($active_payment && $active_payment->reference_no == $reference_no) {
             $active_payment = null;
@@ -141,7 +162,7 @@ class MeterService {
         $client = array_merge($filteredAccountArray, $client->toArray());
 
         unset($client['accounts']);
-        
+
         return [
             'client' => $client,
             'current_bill' => $current_bill,
@@ -149,7 +170,7 @@ class MeterService {
             'active_payment' => $active_payment,
             'unpaid_bills' => $unpaid_bills,
         ];
-    }    
+    }
 
     public static function getBills(?string $number = null, bool $isAll = false) {
 
@@ -169,7 +190,7 @@ class MeterService {
 
         return $isAll ? $query->get()->toArray() : optional($query->first())->toArray();
     }
-    
+
     public static function create(array $payload) {
 
         DB::beginTransaction();
@@ -190,7 +211,7 @@ class MeterService {
             ];
 
         } catch (\Exception $e) {
-            
+
             DB::rollBack();
 
             return [
@@ -206,7 +227,7 @@ class MeterService {
         DB::beginTransaction();
 
         try {
-            
+
             $updateData = [
                 'property_types_id' => $payload['property_type'],
                 'cubic_from' => $payload['cubic_from'],
@@ -224,7 +245,7 @@ class MeterService {
             ];
 
         } catch (\Exception $e) {
-            
+
             DB::rollBack();
 
             return [
@@ -240,9 +261,9 @@ class MeterService {
         DB::beginTransaction();
 
         try {
-            
+
             $data = Rates::where('id', $id)->first();
-                
+
             $data->delete();
 
             DB::commit();
@@ -253,7 +274,7 @@ class MeterService {
             ];
 
         } catch (\Exception $e) {
-            
+
             DB::rollBack();
 
             return [
@@ -274,7 +295,7 @@ class MeterService {
         $previous_reading = optional($latest_reading)->present_reading ?? 0;
 
         $consumption = (float) $payload['present_reading'] - (float) $previous_reading;
-    
+
         $base_rate = null;
 
         if(config('app.product') === 'novustream') {
@@ -288,7 +309,7 @@ class MeterService {
                 ->value('rate') ?? 0;
             $rate = $base_rate  *  $consumption;
         }
-        
+
         if ($rate == 0 || $base_rate && $base_rate == 0) {
             return [
                 'status' => 'error',
@@ -305,7 +326,7 @@ class MeterService {
             ->sum('amount') ?? 0;
 
         $total_amount = $unpaidAmount + $rate;
-    
+
         $other_deductions = $this->paymentBreakdownService::getData();
         $penalty_deductions = $this->paymentBreakdownService::getPenalty();
         $service_fees = $this->paymentBreakdownService::getServiceFee();
@@ -323,13 +344,13 @@ class MeterService {
                 'description' => '',
             ],
         ];
-    
+
         // Process Other Deductions
         foreach ($other_deductions as $deduction) {
             if ($deduction->type == 'percentage') {
                 $base_amount = ($deduction->percentage_of == 'basic_charge') ? $rate : $total_amount;
-                $amount = $base_amount * ($deduction->amount / 100); 
-    
+                $amount = $base_amount * ($deduction->amount / 100);
+
                 $deductions[] = [
                     'name' => $deduction->name,
                     'description' => $deduction->amount . '%',
@@ -348,33 +369,33 @@ class MeterService {
         // Process Penalty
 
         if(!is_null($latest_reading)) {
-            
+
             $current_timestamp = Carbon::now();
             $due_timestamp = Carbon::parse($latest_reading->bill->due_date) ?? null;
 
             if($current_timestamp->gt($due_timestamp)) {
 
                 $due_count = $current_timestamp->diff($due_timestamp)->days;
-    
+
                 $amount = 0;
-    
+
                 foreach ($penalty_deductions as $penalty) {
                     if ($due_count >= $penalty->due_from && $due_count <= $penalty->due_to) {
                         $amount = $penalty->amount;
-                        break; 
+                        break;
                     }
                 }
-    
+
                 $deductions[] = [
                     'name' => 'Penalty',
                     'description' => '',
                     'amount' => $amount
                 ];
-    
+
             }
         }
-        
-    
+
+
         // Process Service Fees
         foreach ($service_fees as $fee) {
             if ($fee->property_id == $payload['property_type_id']) {
@@ -384,7 +405,7 @@ class MeterService {
                     'description' => '',
                 ];
             }
-        }    
+        }
 
         $reading = [
             'meter_no' => $payload['meter_no'],
@@ -418,11 +439,11 @@ class MeterService {
     }
 
     private function generateReferenceNo() {
-        
+
         $prefix = env('APP_PRODUCT');
 
         $prefix = $prefix == 'novustream' ? 'NST' : 'NSU';
-        
+
         return $prefix . '-' . time();
 
     }

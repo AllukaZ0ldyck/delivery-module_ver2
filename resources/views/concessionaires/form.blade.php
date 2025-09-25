@@ -5,11 +5,11 @@
         <div class="responsive-wrapper">
             <div class="main-header d-flex justify-content-between">
                 @if(isset($data))
-                    <h1>Update Concessionaire</h1>
+                    <h1>Update customer</h1>
                 @else
-                    <h1>Add New Concessionaire</h1>
+                    <h1>Add New customer</h1>
                 @endif
-                <a href="{{route('concessionaires.index')}}" class="btn btn-outline-primary px-5 py-3 text-uppercase">
+                <a href="{{route('customers.index')}}" class="btn btn-outline-primary px-5 py-3 text-uppercase">
                     Go Back
                 </a>
             </div>

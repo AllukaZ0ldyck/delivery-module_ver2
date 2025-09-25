@@ -5,8 +5,8 @@
 <div class="login">
     <div class="container " id="container">
         <div class="form-container sign-up-container">
-            <form method="POST" action="{{ route('auth.register') }}">
-                @csrf                
+            <form method="POST" action="{{ route('register') }}">
+                @csrf
                 <h1>Create Account</h1>
                 <div class="social-container">
                     <a href="#" class="social"><i class="fab fa-facebook-f"></i></a>
@@ -84,7 +84,7 @@
                     <img src="{{ asset(config('app.product') === 'novustream' ? 'images/water_delivery.webp' : 'images/water_delivery.webp') }}" alt="" class="w-100">
                     <p>Create Account</p>
                     <a href="/register" class="btn btn-primary fw-bold text-white border-2 fs-6 px-5 py-3 text-uppercase fw-bold" id="signUp">Sign Up</a>
-                </div>                
+                </div>
             </div>
         </div>
     </div>

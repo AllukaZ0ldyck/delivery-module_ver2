@@ -25,12 +25,12 @@ class RedirectIfAuthenticated
                 if (Auth::user()->user_type === 'admin') {
                     return redirect('/dashboard');
                 }
-        
+
                 if(Auth::user()->user_type == 'client') {
                     return redirect('my/overview');
                 }
-        
-                if(Auth::user()->user_type == 'technician') {
+
+                if(Auth::user()->user_type == 'delivery_man') {
                     return redirect('/reading');
                 }
             }

@@ -4,12 +4,12 @@
     <main class="main">
         <div class="responsive-wrapper">
             <div class="main-header d-flex justify-content-between">
-                <h1>Our Concessionaires</h1>
+                <h1>Our customers</h1>
                 <div class="d-flex align-items-center gap-3">
-                    <a href="{{route('concessionaires.import.view')}}" class="btn btn-outline-primary px-5 py-3 text-uppercase">
+                    <a href="{{route('customers.import.view')}}" class="btn btn-outline-primary px-5 py-3 text-uppercase">
                         Import
                     </a>
-                    <a href="{{route('concessionaires.create')}}" class="btn btn-primary px-5 py-3 text-uppercase">
+                    <a href="{{route('customers.create')}}" class="btn btn-primary px-5 py-3 text-uppercase">
                         Add New
                     </a>
                 </div>
@@ -42,7 +42,7 @@
             serverSide: true,
             ajax: url,
             columns: [
-                { data: 'id', name: 'id' }, 
+                { data: 'id', name: 'id' },
                 { data: 'name', name: 'name' },
                 { data: 'accounts', name: 'accounts' },
                 { data: 'actions', name: 'actions', orderable: false, searchable: false } // Fix: Explicitly set actions as non-sortable
@@ -55,8 +55,8 @@
         $(document).on('click', '.btn-delete', function() {
             const id = $(this).data('id');
             const token = '{{csrf_token()}}';
-            const url = '{{route("concessionaires.destroy", ["concessionaire" => "__ID__"])}}'.replace('__ID__', id);
-        
+            const url = '{{route("customers.destroy", ["customer" => "__ID__"])}}'.replace('__ID__', id);
+
             remove(table, url, token)
 
         });

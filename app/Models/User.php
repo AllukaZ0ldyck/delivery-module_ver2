@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,9 +12,12 @@ class User extends Authenticatable
     protected $fillable = [
         'account_no',
         'contact_no',
-        'name',
+        'firstname',
+        'lastname',
+        'name',          // keep for backward compatibility
         'email',
         'password',
+        'role',          // NEW → admin, staff, customer
     ];
 
     protected $hidden = [
@@ -28,11 +30,43 @@ class User extends Authenticatable
         'isValidated' => 'boolean',
     ];
 
-    public function property_types() {
+    /*
+    |--------------------------------------------------------------------------
+    | Existing Relations (billing system)
+    |--------------------------------------------------------------------------
+    */
+    public function property_types()
+    {
         return $this->hasOne(PropertyTypes::class, 'id', 'property_type');
     }
 
-    public function accounts() {
+    public function accounts()
+    {
         return $this->hasMany(UserAccounts::class);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | New Relations (water delivery system)
+    |--------------------------------------------------------------------------
+    */
+    public function orders()
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function deliveries()
+    {
+        return $this->hasMany(Delivery::class, 'staff_id');
+    }
+
+    public function isRole($role)
+    {
+        return $this->role === $role;  // Compare the user's role with the passed role
     }
 }

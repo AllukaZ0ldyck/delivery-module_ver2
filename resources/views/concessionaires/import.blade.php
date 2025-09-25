@@ -4,8 +4,8 @@
     <main class="main">
         <div class="responsive-wrapper">
             <div class="main-header d-flex justify-content-between">
-                <h1>Import Concessionaires</h1>
-                <a href="{{route('concessionaires.index')}}" class="btn btn-outline-primary px-5 py-3 text-uppercase">
+                <h1>Import customers</h1>
+                <a href="{{route('customers.index')}}" class="btn btn-outline-primary px-5 py-3 text-uppercase">
                     Go Back
                 </a>
             </div>
@@ -19,12 +19,12 @@
                             @error('file')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror
-                        </div> 
+                        </div>
                     </div>
                     <div class="d-flex justify-content-end my-5">
                         <button type="submit" class="btn btn-primary px-5 py-3 text-uppercase fw-bold">Submit</button>
                     </div>
-                </form>                
+                </form>
             </div>
         </div>
     </main>
@@ -41,11 +41,11 @@
             @endif
 
             $("form").on("submit", function(e){
-                e.preventDefault(); 
-                
-                let formData = new FormData(this); 
+                e.preventDefault();
 
-                axios.post("{{ route('concessionaires.import.action') }}", formData, {
+                let formData = new FormData(this);
+
+                axios.post("{{ route('customers.import.action') }}", formData, {
                     headers: {
                         "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content"),
                         "Content-Type": "multipart/form-data"

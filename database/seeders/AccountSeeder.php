@@ -40,11 +40,11 @@ class AccountSeeder extends Seeder
         );
 
         Admin::updateOrCreate(
-            ['email' => 'technician@gmail.com'],
+            ['email' => 'delivery_man@gmail.com'],
             [
-                'name' => 'Technician User',
-                'email' => 'technician@gmail.com',
-                'user_type' => 'technician',
+                'name' => 'Delivery Man',
+                'email' => 'delivery_man@gmail.com',
+                'user_type' => 'delivery_man',
                 'email_verified_at' => now(),
                 'password' => Hash::make('password'),
                 'created_at' => now(),

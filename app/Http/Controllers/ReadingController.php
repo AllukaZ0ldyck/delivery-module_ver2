@@ -19,27 +19,27 @@ use Yajra\DataTables\Facades\DataTables;
 
 class ReadingController extends Controller
 {
-    
+
     public $meterService;
     public $paymentBreakdownService;
     public $paymentServiceFee;
     public $generateService;
 
-    public function __construct(MeterService $meterService, 
-        PaymentBreakdown $paymentBreakdownService, 
+    public function __construct(MeterService $meterService,
+        PaymentBreakdown $paymentBreakdownService,
         PaymentServiceFee $paymentServiceFee,
         GenerateService $generateService)
     {
 
         $this->middleware(function ($request, $next) {
-            $method = $request->route()->getActionMethod(); 
-    
+            $method = $request->route()->getActionMethod();
+
             if (!in_array($method, ['show'])) {
-                if (!Gate::any(['admin', 'technician'])) {
+                if (!Gate::any(['admin', 'delivery_man'])) {
                     abort(403, 'Unauthorized');
                 }
             }
-    
+
             return $next($request);
         });
 
@@ -118,7 +118,7 @@ class ReadingController extends Controller
         DB::beginTransaction();
 
         try {
-            
+
             $account = $this->meterService->getAccount($payload['meter_no']);
 
             $meter_no = $account->meter_serial_no;
@@ -175,12 +175,12 @@ class ReadingController extends Controller
                 'message' => 'Error occured: ' . $e->getMessage()
             ]);
         }
-        
+
 
     }
 
     private function generatePaymentQR(string $reference_no, array $payload) {
-        
+
         // $api = env('NOVUPAY_URL') . '/api/v1/save/transaction';
         $api = 'http://localhost/api/v1/save/transaction';
 
@@ -191,28 +191,28 @@ class ReadingController extends Controller
             'Content-Type: application/json'
         ]);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload)); 
-        
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+
         $response = curl_exec($ch);
         $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         $curlError = curl_errno($ch) ? curl_error($ch) : null;
         curl_close($ch);
-        
+
         $decodedResponse = json_decode($response, true);
-        
+
         if ($curlError) {
             return redirect()->back()->with('alert', [
                 'status' => 'error',
                 'message' => 'Curl Error: ' . $curlError
             ]);
         }
-        
+
         if (!is_array($decodedResponse)) {
             $decodedResponse = ['error' => 'Invalid API response', 'raw' => $response];
         }
 
         if ($httpCode == 200) {
-           
+
             if ($decodedResponse['status'] == 'success' && isset($decodedResponse['reference_no'])) {
 
                 return true;
@@ -243,10 +243,10 @@ class ReadingController extends Controller
                 return Carbon::parse($row->created_at)->format('F d, Y');
             })
             ->addColumn('actions', function ($row) {
-                return 
+                return
                     '<div class="d-flex align-items-center gap-2">
-                        <a target="_blank" href="' . route('reading.show', $row->bill->reference_no) . '" 
-                            class="btn btn-primary text-white text-uppercase fw-bold" 
+                        <a target="_blank" href="' . route('reading.show', $row->bill->reference_no) . '"
+                            class="btn btn-primary text-white text-uppercase fw-bold"
                             id="show-btn" data-id="' . e($row->id) . '">
                             <i class="bx bx-receipt"></i>
                         </a>
