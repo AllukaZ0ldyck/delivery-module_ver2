@@ -2,6 +2,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\OrderItem;
 
 class Order extends Model
 {
@@ -13,19 +14,21 @@ class Order extends Model
         'delivery_address',
         'delivery_date',
         'status',
-        'delivery_status', // New field to track delivery status
-        'payment_status',   // New field to track payment status
+        'payment_method',
+        'payment_receipt',
+        'payment_status',
     ];
+
 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
+    // public function product()
+    // {
+    //     return $this->belongsTo(Product::class);
+    // }
 
     public function delivery()
     {
@@ -50,4 +53,17 @@ class Order extends Model
         $this->payment_status = $status;
         $this->save();
     }
+
+    public function deliveryPersonnel()
+    {
+        return $this->belongsTo(\App\Models\Admin::class, 'delivery_personnel_id');
+    }
+
+    public function items()
+    {
+        return $this->hasMany(OrderItem::class);
+    }
+
+
+
 }

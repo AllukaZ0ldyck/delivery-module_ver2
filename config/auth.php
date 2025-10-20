@@ -40,11 +40,13 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
-        'admins' => [
+
+        'admin' => [ // ✅ singular
             'driver' => 'session',
-            'provider' => 'admins', 
+            'provider' => 'admins',
         ],
     ],
+
 
     /*
     |--------------------------------------------------------------------------

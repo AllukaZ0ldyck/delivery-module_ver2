@@ -7,7 +7,7 @@ use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-
+use App\Models\OrderItem;
 
 class OrderController extends Controller
 {
@@ -17,6 +17,12 @@ class OrderController extends Controller
     public function index()
     {
         $orders = Order::where('user_id', Auth::id())->latest()->get();
+        $orders = Order::with('items.product')
+        ->where('user_id', Auth::id())
+        ->latest()
+        ->get();
+
+        
         return view('orders.index', compact('orders'));
     }
 
@@ -26,45 +32,106 @@ class OrderController extends Controller
     public function create()
     {
         $products = Product::all();
-        return view('orders.create', compact('products'));
+        $products = Product::where('is_active', true)->get();
+
+        $user = Auth::user(); // ✅ Get the logged-in user
+
+        return view('orders.create', compact('products', 'user'));
     }
+
 
     /**
      * Store a new order
      */
+    
+
     public function store(Request $request)
     {
+
+        // dd($request->all());
+
         $request->validate([
-            'product_id' => 'required|exists:products,id',
-            'quantity'   => 'required|integer|min:1',
+            'items' => 'required|array|min:1',
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
             'delivery_address' => 'required|string|max:255',
-            'delivery_date'    => 'required|date|after_or_equal:today',
+            'delivery_date' => 'required|date|after_or_equal:today',
+            'payment_method' => 'required|in:COD,GCash',
+            'payment_receipt' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        $product = Product::findOrFail($request->product_id);
-        $totalPrice = $product->price * $request->quantity;
+        // Handle GCash receipt upload
+        $receiptPath = null;
+        if ($request->hasFile('payment_receipt')) {
+            $receiptPath = $request->file('payment_receipt')->store('receipts', 'public');
+        }
 
-        Order::create([
-            'user_id'          => Auth::id(),
-            'product_id'       => $request->product_id,
-            'quantity'         => $request->quantity,
-            'total_price'      => $totalPrice,
+        $paymentStatus = $request->payment_method === 'GCash' ? 'pending_verification' : 'unpaid';
+
+        // Calculate total
+        $totalPrice = 0;
+        foreach ($request->items as $item) {
+
+            // ✅ Check if product exists AND active
+            $product = Product::where('id', $item['product_id'])
+                ->where('is_active', true)
+                ->first();
+
+            if (!$product) {
+                return back()->with('error', 'One of the selected products is currently unavailable or under maintenance.');
+            }
+
+            // Add up total
+            $totalPrice += $product->price * $item['quantity'];
+        }
+
+        // Create main order
+        $order = Order::create([
+            'user_id' => \Auth::id(),
+            'total_price' => $totalPrice,
             'delivery_address' => $request->delivery_address,
-            'delivery_date'    => $request->delivery_date,
-            'status'           => 'pending',
+            'delivery_date' => $request->delivery_date,
+            'status' => 'pending',
+            'payment_method' => $request->payment_method,
+            'payment_receipt' => $receiptPath,
+            'payment_status' => $paymentStatus,
         ]);
 
-        return redirect()->route('orders.index')
-                         ->with('success', 'Order placed successfully!');
+        // Create order items
+        foreach ($request->items as $item) {
+            $product = Product::find($item['product_id']);
+            OrderItem::create([
+                'order_id' => $order->id,
+                'product_id' => $item['product_id'],
+                'quantity' => $item['quantity'],
+                'unit_price' => $product->price,
+                'total_price' => $product->price * $item['quantity'],
+            ]);
+        }
+
+        return redirect()->route('orders.index')->with('success', 'Order placed successfully!');
     }
+
+
 
     /**
      * Admin/Customer can view specific order
      */
-    public function show(Order $order)
+   public function show($id)
     {
-        return view('orders.show', compact('order'));
+        $order = Order::with([
+            'user',
+            'items.product',
+            'payments',
+            'deliveryPersonnel'
+        ])->findOrFail($id);
+
+        return view('admin.orders.show', compact('order'));
     }
+
+
+
+
 
     /**
      * Cancel an order
@@ -130,8 +197,9 @@ class OrderController extends Controller
 
         // Validate the request
         $request->validate([
-            'delivery_personnel_id' => 'required|exists:users,id'
+            'delivery_personnel_id' => 'required|exists:admins,id'
         ]);
+
 
         // Update the order with the assigned delivery personnel
         $order->update([

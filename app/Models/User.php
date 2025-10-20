@@ -10,15 +10,23 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     protected $fillable = [
-        'account_no',
-        'contact_no',
         'firstname',
         'lastname',
-        'name',          // keep for backward compatibility
+        'name',
         'email',
+        'contact',
+        'address',
+        'gallon_type',
+        'gallon_count',
+        'role',
         'password',
-        'role',          // NEW → admin, staff, customer
+        'approval_status',
+        'confirmation_code',
+        'qr_token',
+        'qr_code',
     ];
+
+
 
     protected $hidden = [
         'password',
@@ -52,7 +60,7 @@ class User extends Authenticatable
     */
     public function orders()
     {
-        return $this->hasMany(Order::class);
+        return $this->hasMany(Order::class, 'user_id');
     }
 
     public function payments()
@@ -69,4 +77,10 @@ class User extends Authenticatable
     {
         return $this->role === $role;  // Compare the user's role with the passed role
     }
+
+    public function borrowedGallons()
+    {
+        return $this->hasMany(\App\Models\BorrowedGallon::class, 'user_id');
+    }
+
 }

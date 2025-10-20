@@ -12,7 +12,7 @@ class AdminGuardMiddleware
     public function handle(Request $request, Closure $next): Response
     {
 
-        if (!Auth::guard('admins')->check()) {
+        if (!Auth::guard('admin')->check()) {
             return redirect()->route('auth.login')->with('error', 'Access denied. Admins only.');
         }
 

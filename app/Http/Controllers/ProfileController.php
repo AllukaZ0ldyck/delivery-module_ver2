@@ -50,26 +50,23 @@ class ProfileController extends Controller
 
 
     // Update profile of the current user
-    public function update(string $user_type, int $id, Request $request) {
+    public function update(Request $request)
+    {
+        $user = Auth::user();
+        $id = $user->id;
+        $user_type = $user->user_type ?? 'customer'; // or role
+
         $payload = $request->all();
 
-        // Fetch user data based on ID (if needed for updating)
-        $data = $this->profileService::getData($id);
-
-        if ($data->user_type == 'customer') {
-            $payload['user_type'] = 'customer';
-        } else {
-            $payload['user_type'] = 'admin';
-        }
-
-        // Validation logic
+        // ✅ Updated Validation Rules
         $validator = Validator::make($payload, [
-            'name' => 'required',
-            'email' => [
-                'required',
-                Rule::unique('users')->ignore($id),
-            ],
-            'password' => 'nullable|min:8|required_with:confirm_password',
+            'name'          => 'required|string|max:255',
+            'email'         => ['required', 'email', Rule::unique('users')->ignore($id)],
+            'contact'       => 'required|string|max:20',
+            'address'       => 'required|string|max:255',
+            'gallon_type'   => 'required|string|max:50',
+            'gallon_count'  => 'required|integer|min:1',
+            'password'      => 'nullable|min:8|required_with:confirm_password',
             'confirm_password' => 'nullable|same:password|required_with:password',
         ]);
 
@@ -79,20 +76,28 @@ class ProfileController extends Controller
                 ->withInput();
         }
 
-        // Update user profile using the ProfileService
+        // ✅ Handle password hashing (optional)
+        if (!empty($payload['password'])) {
+            $payload['password'] = bcrypt($payload['password']);
+        } else {
+            unset($payload['password']);
+        }
+
+        // ✅ Update using ProfileService
         $response = $this->profileService::update($id, $payload);
 
-        // Success or error response
+        // ✅ Return success/error message
         if ($response['status'] === 'success') {
             return redirect()->back()->with('alert', [
                 'status' => 'success',
-                'message' => $response['message']
+                'message' => 'Profile updated successfully!',
             ]);
         } else {
             return redirect()->back()->withInput()->with('alert', [
                 'status' => 'error',
-                'message' => $response['message']
+                'message' => $response['message'],
             ]);
         }
     }
+
 }

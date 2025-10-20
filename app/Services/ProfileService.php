@@ -30,43 +30,63 @@ class ProfileService {
     }
 
     // Update user or admin data
-    public static function update(int $id, array $payload) {
+    public static function update(int $id, array $payload)
+    {
         DB::beginTransaction();
 
         try {
-            // Prepare data to be updated
+            // Prepare the base fields for update
             $updateData = [
-                'name' => $payload['name'],
-                'email' => $payload['email'],
+                'name'   => $payload['name'] ?? null,
+                'email'  => $payload['email'] ?? null,
             ];
 
-            // Update password if provided
-            if (isset($payload['password']) && $payload['password']) {
+            // ✅ Include all optional fields if they exist
+            if (isset($payload['contact'])) {
+                $updateData['contact'] = $payload['contact'];
+            }
+
+            if (isset($payload['address'])) {
+                $updateData['address'] = $payload['address'];
+            }
+
+            if (isset($payload['gallon_type'])) {
+                $updateData['gallon_type'] = $payload['gallon_type'];
+            }
+
+            if (isset($payload['gallon_count'])) {
+                $updateData['gallon_count'] = $payload['gallon_count'];
+            }
+
+            // ✅ Update password only if provided
+            if (!empty($payload['password'])) {
                 $updateData['password'] = Hash::make($payload['password']);
             }
 
-            // Update user or admin based on the user type
-            if ($payload['user_type'] === 'client') {
-                User::where('id', $id)->update($updateData);  // Update User model if 'client'
+            // ✅ Determine user model type
+            $userType = $payload['user_type'] ?? 'client'; // default to client if not set
+
+            if ($userType === 'client' || $userType === 'customer') {
+                User::where('id', $id)->update($updateData);
             } else {
-                Admin::where('id', $id)->update($updateData);  // Update Admin model if 'admin'
+                Admin::where('id', $id)->update($updateData);
             }
 
-            // Commit the transaction
             DB::commit();
 
             return [
-                'status' => 'success',
-                'message' => 'Profile updated successfully.'
+                'status'  => 'success',
+                'message' => 'Profile updated successfully.',
             ];
 
         } catch (\Exception $e) {
-            DB::rollBack(); // Rollback if there's an error
+            DB::rollBack();
 
             return [
-                'status' => 'error',
-                'message' => 'Error occurred: ' . $e->getMessage()
+                'status'  => 'error',
+                'message' => 'Error occurred: ' . $e->getMessage(),
             ];
         }
     }
+
 }

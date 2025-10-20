@@ -45,7 +45,7 @@ class ClientController extends Controller
             return $this->datatable($data);
         }
 
-        return view('customers.index', compact('data'));
+        return view('admin.customers.index', compact('data'));
     }
 
     public function create() {

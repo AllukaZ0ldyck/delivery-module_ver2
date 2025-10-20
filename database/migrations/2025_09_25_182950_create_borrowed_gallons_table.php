@@ -13,7 +13,7 @@ class CreateBorrowedGallonsTable extends Migration
             $table->foreignId('user_id')->constrained(); // Reference to the User who borrowed the gallon
             $table->integer('gallon_count'); // Number of gallons borrowed
             $table->timestamp('borrowed_at')->useCurrent(); // When the gallon was borrowed
-            $table->timestamp('due_date'); // When the gallon should be returned
+            $table->timestamp('due_date')->nullable(); // When the gallon should be returned
             $table->enum('status', ['borrowed', 'returned'])->default('borrowed'); // Track status of the gallon
             $table->timestamps();
         });

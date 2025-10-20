@@ -13,7 +13,13 @@ use App\Models\Order;
 use App\Models\Payment;
 use App\Models\User;
 use App\Models\BorrowedGallon;
+use Illuminate\Support\Facades\Mail;
+use Illuminate\Support\Facades\Hash;
+use App\Mail\AccountApprovedMail;
 // use App\Models\Gallon;
+use App\Models\Admin;
+use App\Models\Gallon;
+use Carbon\Carbon;
 
 
 class AdminController extends Controller
@@ -37,23 +43,89 @@ class AdminController extends Controller
         $this->roleService = $roleService;
     }
 
-    public function index() {
+    public function index()
+    {
         $data = $this->adminService::getData();
 
-        if(request()->ajax()) {
+        if (request()->ajax()) {
             return $this->datatable($data);
         }
 
-        // Add dashboard stats
+        // ─────────────────────────────
+        // 📊 DASHBOARD METRICS
+        // ─────────────────────────────
         $totalOrders = Order::count();
-        $totalCustomers = User::where('role', 'customer')->count();
-        $totalRevenue = Payment::sum('amount');
-        $recentOrders = Order::with('user', 'product')->latest()->take(5)->get();
+        $totalCustomers = User::where('role', 'customer')
+            ->where('approval_status', 'approved')
+            ->count();
+        $totalRevenue = \App\Models\Order::where('status', 'delivered')
+            ->where('payment_status', 'paid')
+            ->sum('total_price');
 
+        // 🆕 New Orders (Today)
+        $todayOrders = Order::with(['user', 'items.product'])
+            ->whereDate('created_at', today())
+            ->latest()
+            ->get();
+
+        $newOrdersCount = $todayOrders->count();
+
+        // ─────────────────────────────
+        // 💹 SALES TREND: Last 7 Days
+        // ─────────────────────────────
+        $salesLast7Days = [
+            'dates' => [],
+            'amounts' => []
+        ];
+
+        for ($i = 6; $i >= 0; $i--) {
+            $date = Carbon::today()->subDays($i);
+            $salesLast7Days['dates'][] = $date->format('M d');
+            $salesLast7Days['amounts'][] = Order::where('status', 'delivered')
+                ->whereDate('created_at', $date)
+                ->sum('total_price');
+        }
+
+        // ─────────────────────────────
+        // 🧾 BORROWED GALLON STATS
+        // ─────────────────────────────
+        $borrowStats = [
+            BorrowedGallon::where('status', 'pending')->count(),
+            BorrowedGallon::where('status', 'approved')->count(),
+            BorrowedGallon::where('status', 'returned')->count()
+        ];
+
+        // ─────────────────────────────
+        // 💰 SALES SUMMARIES
+        // ─────────────────────────────
+        // ✅ Sales today and YTD
+        $salesToday = \App\Models\Order::whereDate('created_at', today())
+            ->where('status', 'delivered')
+            ->where('payment_status', 'paid')
+            ->sum('total_price');
+
+        $salesYTD = \App\Models\Order::whereYear('created_at', now()->year)
+            ->where('status', 'delivered')
+            ->where('payment_status', 'paid')
+            ->sum('total_price');
+
+        // ─────────────────────────────
+        // RETURN VIEW
+        // ─────────────────────────────
         return view('admin.dashboard', compact(
-            'data', 'totalOrders', 'totalCustomers', 'totalRevenue', 'recentOrders'
+            'data',
+            'totalOrders',
+            'totalCustomers',
+            'totalRevenue',
+            'todayOrders',
+            'newOrdersCount',
+            'salesLast7Days',
+            'borrowStats',
+            'salesToday',
+            'salesYTD'
         ));
     }
+
 
 
     public function create() {
@@ -190,7 +262,7 @@ class AdminController extends Controller
         $totalCustomers = User::where('role', 'customer')->count();
         $totalRevenue = Payment::sum('amount');
 
-        $recentOrders = Order::with('user', 'product')->latest()->take(5)->get();
+        $recentOrders = Order::with(['user', 'items.product', 'product'])->latest()->take(5)->get();
 
         return view('admin.dashboard', compact(
             'totalSales',
@@ -251,7 +323,164 @@ class AdminController extends Controller
         return view('admin.gallon-dashboard', compact('totalGallons', 'totalRefills', 'gallonUsageStats'));
     }
 
+    public function pendingCustomers()
+    {
+        $pendingUsers = User::where('role', 'customer')
+            ->where('approval_status', 'pending')
+            ->get();
 
+        return view('admin.customers.pending', compact('pendingUsers'));
+    }
+
+    public function approveCustomer($id)
+    {
+        $user = User::findOrFail($id);
+        $user->approval_status = 'approved';
+        $user->save();
+
+        // ✅ Send account approval email
+        \Mail::to($user->email)->send(new \App\Mail\AccountApprovedMail($user));
+
+        return redirect()->back()->with('success', 'Customer approved successfully, and notification email sent.');
+    }
+
+
+    public function rejectCustomer($id)
+    {
+        $user = User::findOrFail($id);
+        $user->approval_status = 'rejected';
+        $user->save();
+
+        return back()->with('error', 'Customer registration rejected.');
+    }
+
+
+    public function manageBorrowedGallons()
+    {
+        $borrowedGallons = BorrowedGallon::with('user', 'approver')->get();
+        return view('admin.borrowed-gallons', compact('borrowedGallons'));
+    }
+
+    public function approveBorrowedGallon(Request $request, $id)
+    {
+        $borrow = BorrowedGallon::findOrFail($id);
+        $borrow->update([
+            'status' => 'approved',
+            'approved_by' => auth()->id(),
+            'borrowed_at' => now(),
+        ]);
+
+        return back()->with('success', 'Borrow request approved successfully.');
+    }
+
+    public function personnelsIndex()
+    {
+        $personnels = Admin::whereIn('user_type', ['Delivery', 'staff'])->get();
+        return view('admin.personnels.index', compact('personnels'));
+    }
+
+    public function personnelsCreate()
+    {
+        return view('admin.personnels.create');
+    }
+
+    public function personnelsStore(Request $request)
+    {
+        $request->validate([
+            'name'      => 'required|string|max:255',
+            'email'     => 'required|email|unique:admins,email',
+            'password'  => 'required|min:6',
+            'user_type' => 'required|in:Delivery,staff',
+        ]);
+
+        Admin::create([
+            'name'      => $request->name,
+            'email'     => $request->email,
+            'password'  => Hash::make($request->password),
+            'user_type' => $request->user_type,
+        ]);
+
+        return redirect()->route('admin.personnels.index')->with('success', 'Personnel added successfully!');
+    }
+
+    public function personnelsEdit($id)
+    {
+        $personnel = Admin::findOrFail($id);
+        return view('admin.personnels.edit', compact('personnel'));
+    }
+
+    public function personnelsUpdate(Request $request, $id)
+    {
+        $personnel = Admin::findOrFail($id);
+
+        $request->validate([
+            'name'      => 'required|string|max:255',
+            'email'     => 'required|email|unique:admins,email,' . $id,
+            'password'  => 'nullable|min:6',
+            'user_type' => 'required|in:Delivery,staff',
+        ]);
+
+        $personnel->name = $request->name;
+        $personnel->email = $request->email;
+        $personnel->user_type = $request->user_type;
+
+        if ($request->filled('password')) {
+            $personnel->password = Hash::make($request->password);
+        }
+
+        $personnel->save();
+
+        return redirect()->route('admin.personnels.index')->with('success', 'Personnel updated successfully!');
+    }
+
+    public function personnelsDestroy($id)
+    {
+        $personnel = Admin::findOrFail($id);
+        $personnel->delete();
+
+        return redirect()->route('admin.personnels.index')->with('success', 'Personnel deleted successfully!');
+    }
+
+    public function getSalesData($filter)
+    {
+        $labels = [];
+        $values = [];
+
+        if ($filter === 'week') {
+            // 🗓 Last 7 Days
+            for ($i = 6; $i >= 0; $i--) {
+                $date = now()->subDays($i);
+                $labels[] = $date->format('M d');
+                $values[] = \App\Models\Order::where('status', 'delivered')
+                    ->whereDate('created_at', $date)
+                    ->sum('total_price');
+            }
+        } elseif ($filter === 'month') {
+            // 📅 Last 30 Days grouped by week
+            for ($i = 4; $i >= 0; $i--) {
+                $startOfWeek = now()->subWeeks($i)->startOfWeek();
+                $endOfWeek = now()->subWeeks($i)->endOfWeek();
+                $labels[] = $startOfWeek->format('M d') . ' - ' . $endOfWeek->format('M d');
+                $values[] = \App\Models\Order::where('status', 'delivered')
+                    ->whereBetween('created_at', [$startOfWeek, $endOfWeek])
+                    ->sum('total_price');
+            }
+        } else {
+            // 📆 Yearly — group by month
+            for ($i = 1; $i <= 12; $i++) {
+                $labels[] = now()->startOfYear()->addMonths($i - 1)->format('M');
+                $values[] = \App\Models\Order::where('status', 'delivered')
+                    ->whereMonth('created_at', $i)
+                    ->whereYear('created_at', now()->year)
+                    ->sum('total_price');
+            }
+        }
+
+        return response()->json([
+            'labels' => $labels,
+            'values' => $values
+        ]);
+    }
 
 
 }

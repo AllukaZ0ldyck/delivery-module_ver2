@@ -9,7 +9,9 @@ class Product extends Model
         'name',
         'price',
         'stock',
+        'is_active',
     ];
+
 
     public function orders()
     {

@@ -6,23 +6,23 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
+    /**
+     * Run the migrations.
+     */
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            // Add new fields
-            $table->string('firstname')->nullable()->after('id');
-            $table->string('lastname')->nullable()->after('firstname');
-            $table->string('role')->default('customer')->after('password'); // admin, staff, customer
-
-            // Keep old 'name' for backward compatibility
+            //
         });
     }
 
+    /**
+     * Reverse the migrations.
+     */
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn(['firstname', 'lastname', 'role']);
+            //
         });
     }
 };
-

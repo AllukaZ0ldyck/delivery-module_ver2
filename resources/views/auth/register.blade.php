@@ -5,42 +5,36 @@
 <div class="login">
     <div class="container right-panel-active scroll" id="container">
         <div class="form-container sign-up-container">
+            @if ($errors->any())
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        @foreach ($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+
             <form method="POST" action="{{ route('register') }}">
                 @csrf
                 <h1 class="fw-bold mb-2">Sign in</h1>
                 <span>or use your email for registration</span>
-                <div class="w-100">
-                    <input type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" placeholder="Name" />
-                    @error('name')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                </div>
-                <div class="w-100">
-                    <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" placeholder="Email" />
-                    @error('email')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                </div>
-                <div class="w-100">
-                    <input type="password" class="form-control @error('password') is-invalid @enderror" name="password" placeholder="Password" />
-                    @error('password')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                </div>
-                <div class="w-100">
-                    <input type="password" class="form-control @error('password_confirmation') is-invalid @enderror" name="password_confirmation" placeholder="Confirm Password" />
-                    @error('password_confirmation')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
-                </div>
+                <input type="text" name="name" placeholder="Full Name" required />
+                <input type="text" name="contact" placeholder="Contact Number" required />
+                <input type="email" name="email" placeholder="Email Address" required />
+                <input type="text" name="address" placeholder="Home Address" required />
+
+                <select name="gallon_type" required>
+                    <option value="">Select Gallon Type</option>
+                    <option value="Blue 5 Gallon">Blue 5 Gallon</option>
+                    <option value="Slim 5 Gallon">Slim 5 Gallon</option>
+                </select>
+
+                <input type="number" name="gallon_count" placeholder="Number of Gallons" required />
+
+                <input type="password" name="password" placeholder="Password" required />
+                <input type="password" name="password_confirmation" placeholder="Confirm Password" required />
+
                 <button class="mt-4">Sign Up</button>
             </form>
         </div>
@@ -52,7 +46,7 @@
                     <a href="/login" class="btn btn-primary border-2 fs-6 px-5 py-3 text-white fw-bold text-uppercase fw-bold" id="signIn">Sign In</a>
                 </div>
                 <div class="overlay-panel overlay-right">
-                    <h1>Sofia Waters</h1>
+                    <h1>AquaTek Water Station</h1>
                     <p>Are you ready to view your water bills? and proceed to payments? Start now by creating an account!</p>
                     <button class="ghost" id="signUp">Sign Up</button>
                 </div>

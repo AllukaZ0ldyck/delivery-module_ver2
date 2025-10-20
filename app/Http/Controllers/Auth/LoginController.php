@@ -51,7 +51,7 @@ class LoginController extends Controller
             return 'my/overview';
         }
 
-        if(auth()->user()->user_type == 'delivery_man') {
+        if(auth()->user()->user_type == 'delivery') {
             return '/reading';
         }
     }

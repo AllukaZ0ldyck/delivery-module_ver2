@@ -23,8 +23,12 @@ use App\Http\Controllers\DeliveryPersonnelController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Request;
 use App\Http\Controllers\BorrowedGallonController;
-
-
+use App\Http\Controllers\Auth\QrLoginController;
+use App\Http\Controllers\AdminProfileController;
+use App\Models\Admin;
+use App\Models\Order;
+use App\Http\Controllers\StaffPersonnelController;
+use App\Http\Controllers\TicketController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -77,7 +81,21 @@ Route::middleware(['auth'])->prefix('customer')->group(function () {
 
     // Route::resource('/profile', ProfileController::class)->names('profile');
     Route::get('profile', [ProfileController::class, 'index'])->name('profile.index');
-    Route::post('profile/update', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('profile/update', function () {
+        return redirect()->route('profile.index')
+            ->with('alert', [
+                'status' => 'warning',
+                'message' => 'Profile updates can only be submitted through the form.',
+            ]);
+    });
+
+    // Route::post('profile/update', [ProfileController::class, 'update'])->name('profile.update');
+
+    // Remove the GET fallback or change its URL
+    // Route::get('profile/update', ...) -> comment this out or rename it
+
+    Route::patch('profile/update', [ProfileController::class, 'update'])->name('profile.update');
+
 
 
     Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
@@ -93,10 +111,13 @@ Route::middleware(['auth'])->prefix('customer')->group(function () {
 
 
     // Borrow Gallons
-    Route::get('borrow-gallon', [BorrowedGallonController::class, 'create'])->name('borrow-gallon.create');
-    Route::post('borrow-gallon', [BorrowedGallonController::class, 'store'])->name('borrow-gallon.store');
-    Route::get('my-borrowed-gallons', [BorrowedGallonController::class, 'index'])->name('borrow-gallon.index');
+    Route::get('/borrow-gallon', [BorrowedGallonController::class, 'create'])->name('borrow-gallon.create');
+    Route::post('/borrow-gallon', [BorrowedGallonController::class, 'store'])->name('borrow-gallon.store');
+    Route::get('/my-borrowed-gallons', [BorrowedGallonController::class, 'index'])->name('borrow-gallon.index');
 
+    Route::get('/tickets', [TicketController::class, 'index'])->name('tickets.index');
+    Route::get('/tickets/create', [TicketController::class, 'create'])->name('tickets.create');
+    Route::post('/tickets', [TicketController::class, 'store'])->name('tickets.store');
 
 });
 
@@ -133,7 +154,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
         Route::resource('customers', ClientController::class)->names('customers')->except('show');
         Route::get('customers/import', [ClientController::class,'import_view'])->name('customers.import.view');
         Route::post('customers/import', [ClientController::class,'import_action'])->name('customers.import.action');
-        Route::resource('personnel', AdminController::class)->names('admins');
+        Route::resource('personnel', AdminController::class)->names('admin');
     });
 
     // Delivery Personnel management
@@ -171,9 +192,8 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
 
     // Borrow Gallons
-    Route::get('borrowed-gallons', [AdminController::class, 'borrowedGallons'])->name('admin.borrowed-gallons');
-
-    // Route for updating borrowed gallon status (e.g., return or change status)
+    Route::get('borrowed-gallons', [AdminController::class, 'manageBorrowedGallons'])->name('admin.borrowed-gallons');
+    Route::post('borrowed-gallons/{id}/approve', [AdminController::class, 'approveBorrowedGallon'])->name('admin.borrowed-gallons.approve');
     Route::post('borrowed-gallons/{id}/update', [AdminController::class, 'updateBorrowedGallon'])->name('admin.borrowed-gallons.update');
 
     // Sales Reports
@@ -181,6 +201,38 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
 
     // Gallons Report
      Route::get('/gallon-dashboard', [AdminController::class, 'gallonDashboard'])->name('admin.gallon-dashboard');
+
+
+    Route::get('admin/customers/pending', [AdminController::class, 'pendingCustomers'])->name('admin.customers.pending');
+    Route::post('admin/customers/{id}/approve', [AdminController::class, 'approveCustomer'])->name('admin.customers.approve');
+    Route::post('admin/customers/{id}/reject', [AdminController::class, 'rejectCustomer'])->name('admin.customers.reject');
+
+
+    Route::match(['post', 'patch'], '/orders/{id}/verify-payment', [OrderManagementController::class, 'verifyPayment'])
+    ->name('admin.orders.verifyPayment');
+
+    Route::resource('products', \App\Http\Controllers\Admin\ProductController::class)
+        ->names('admin.products')
+        ->except('show');
+    
+    Route::patch('products/{id}/toggle', [\App\Http\Controllers\Admin\ProductController::class, 'toggleStatus'])
+    ->name('admin.products.toggle');
+
+    Route::get('reports', [\App\Http\Controllers\Admin\ReportController::class, 'index'])
+    ->name('admin.reports.index');
+
+    Route::get('reports/export', [\App\Http\Controllers\Admin\ReportController::class, 'export'])
+    ->name('admin.reports.export');
+
+    Route::get('/personnels', [AdminController::class, 'personnelsIndex'])->name('admin.personnels.index');
+    Route::get('/personnels/create', [AdminController::class, 'personnelsCreate'])->name('admin.personnels.create');
+    Route::post('/personnels', [AdminController::class, 'personnelsStore'])->name('admin.personnels.store');
+    Route::get('/personnels/{id}/edit', [AdminController::class, 'personnelsEdit'])->name('admin.personnels.edit');
+    Route::put('/personnels/{id}', [AdminController::class, 'personnelsUpdate'])->name('admin.personnels.update');
+    Route::delete('/personnels/{id}', [AdminController::class, 'personnelsDestroy'])->name('admin.personnels.destroy');
+
+
+
 
 });
 
@@ -199,63 +251,112 @@ Route::middleware(['auth'])->prefix('customer/my')->group(function () {
 });
 
 
-// Delivery Personnel Routes (Check Role Directly in Route)
-Route::middleware(['auth'])->prefix('delivery')->group(function () {
-    // Route for Delivery Personnel Dashboard (Assigned Orders)
-    Route::get('orders', function () {
-        // Check if the user is a delivery personnel
-        if (Auth::user() && Auth::user()->role === 'delivery_personnel') {
-            // Fetch the orders assigned to the logged-in delivery personnel
-            $orders = \App\Models\Order::where('delivery_personnel_id', Auth::id())->get(); // Fetch orders based on logged-in user
+    Route::middleware(['auth:admin'])->prefix('delivery')->group(function () {
+        /**
+         * Delivery Dashboard — show assigned orders
+         */
+        Route::get('orders', function () {
+            $admin = Auth::guard('admin')->user();
 
-            // Pass the orders to the view
+            // ✅ Ensure user is Delivery personnel
+            if (!$admin || $admin->user_type !== 'delivery') {
+                return redirect()->route('home')->with('error', 'Access Denied');
+            }
+
+            // ✅ Fetch orders assigned to this delivery personnel
+            $orders = Order::where('delivery_personnel_id', $admin->id)
+                ->with(['user', 'items.product'])
+                ->latest()
+                ->get();
+
             return view('delivery-personnel.index', compact('orders'));
-        }
+        })->name('delivery-personnel.index');
 
-        // Redirect if the role doesn't match
-        return redirect()->route('home')->with('error', 'Access Denied');
-    })->name('delivery-personnel.index');
+        /**
+         * View a specific order
+         */
+        Route::get('orders/{id}', function ($id) {
+            $admin = Auth::guard('admin')->user();
 
-    // Route to View a Specific Order
-    Route::get('orders/{id}', function ($id) {
-        // Check if the user is a delivery personnel
-        if (Auth::user() && Auth::user()->role === 'delivery_personnel') {
-            // Fetch the order by ID
-            $order = \App\Models\Order::findOrFail($id);
+            if (!$admin || $admin->user_type !== 'Delivery') {
+                return redirect()->route('home')->with('error', 'Access Denied');
+            }
 
-            // Pass the order to the view
+            // ✅ Fetch specific order assigned to this delivery personnel
+            $order = Order::with(['user', 'items.product'])
+                ->where('delivery_personnel_id', $admin->id)
+                ->findOrFail($id);
+
             return view('delivery-personnel.show', compact('order'));
-        }
+        })->name('delivery-personnel.show');
 
-        // Redirect if the role doesn't match
-        return redirect()->route('home')->with('error', 'Access Denied');
-    })->name('delivery-personnel.show');
+        /**
+         * Update order delivery status
+         */
+        Route::post('orders/{id}/update-status', function (Request $request, $id) {
+            $admin = Auth::guard('admin')->user();
 
-    Route::post('orders/{id}/update-status', function (Request $request, $id) {
-        if (Auth::user() && Auth::user()->role === 'delivery_personnel') {
-            // Fetch the order by its ID
-            $order = \App\Models\Order::findOrFail($id);
+            if (!$admin || $admin->user_type !== 'Delivery') {
+                return redirect()->route('home')->with('error', 'Access Denied');
+            }
 
-            // Debug: Dump the status input value
-            dd($request->input('status'));  // Display the value of status
+            $request->validate([
+                'status' => 'required|in:out_for_delivery,delivered,cancelled'
+            ]);
 
-            // Update the order status
+            $order = Order::where('delivery_personnel_id', $admin->id)->findOrFail($id);
+
             $order->status = $request->input('status');
             $order->save();
 
-            // Redirect back to the orders page with a success message
-            return redirect()->route('delivery-personnel.index')->with('success', 'Order status updated successfully!');
-        }
-
-        return redirect()->route('home')->with('error', 'Access Denied');
-    })->name('delivery-personnel.updateStatus');
+            return redirect()->route('delivery-personnel.index')
+                ->with('success', 'Order status updated successfully!');
+        })->name('delivery-personnel.updateStatus');
+    });
 
 
+    Route::get('/admin/dashboard/sales-data/{filter}', [App\Http\Controllers\AdminController::class, 'getSalesData'])
+    ->name('admin.dashboard.sales-data');
 
-});
-
-
-
-
+    Route::get('/qr-login/{token}', [QrLoginController::class, 'loginViaQr'])->name('qr.login');
 
 
+    // staff Dashboard (optional)
+    Route::get('staff/dashboard', function () {
+        return view('staff.dashboard');
+    })->name('staff.dashboard');
+
+
+    Route::get('{role}/profile', [AdminProfileController::class, 'show'])->name('role.profile.show');
+    Route::get('{role}/profile/edit', [AdminProfileController::class, 'edit'])->name('role.profile.edit');
+    Route::post('{role}/profile/update', [AdminProfileController::class, 'update'])->name('role.profile.update');
+
+
+    
+
+    Route::middleware(['auth:admin'])->prefix('staff')->group(function () {
+        Route::get('/dashboard', [StaffPersonnelController::class, 'index'])->name('staff.index');
+        Route::get('/view/{type}/{id}', [StaffPersonnelController::class, 'show'])->name('staff.show');
+
+        // Order Processing
+        Route::post('/order/{id}/update-status', [StaffPersonnelController::class, 'updateOrderStatus'])->name('staff.updateOrderStatus');
+
+        // Inventory Control
+        Route::post('/product/{id}/update-stock', [StaffPersonnelController::class, 'updateInventory'])->name('staff.updateInventory');
+
+        // Borrowed Gallons
+        Route::post('/borrowed/{id}/approve', [StaffPersonnelController::class, 'approveBorrowed'])->name('staff.approveBorrowed');
+        Route::post('/borrowed/{id}/returned', [StaffPersonnelController::class, 'markReturned'])->name('staff.markReturned');
+
+        // Customer Management (for Staff)
+        Route::get('/customer/{id}/manage', [StaffPersonnelController::class, 'manageCustomer'])->name('staff.customer.manage');
+        Route::post('/customer/{id}/update', [StaffPersonnelController::class, 'updateCustomer'])->name('staff.customer.update');
+        Route::post('/customer/{id}/regenerate-qr', [StaffPersonnelController::class, 'regenerateQr'])->name('staff.customer.regenerateQr');
+
+        Route::get('/customers', [StaffPersonnelController::class, 'listCustomers'])->name('staff.customer.list');
+
+        Route::get('/tickets', [TicketController::class, 'staffIndex'])->name('staff.tickets.index');
+        Route::post('/tickets/{id}/update', [TicketController::class, 'updateStatus'])->name('staff.tickets.update');
+
+
+    });

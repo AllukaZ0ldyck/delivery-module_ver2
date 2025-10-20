@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Foundation\Auth\RegistersUsers;
+use Illuminate\Support\Env;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Validator; // Import the QrCode facade
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\PngWriter;
+use App\Mail\NewUserPendingApproval;
+use Illuminate\Support\Str;
+use Illuminate\Http\Request;
 
 class RegisterController extends Controller
 {
@@ -26,42 +31,74 @@ class RegisterController extends Controller
         return Validator::make($data, [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
+            'contact' => ['required', 'string', 'max:20', 'unique:users,contact'],
+            'address' => ['required', 'string', 'max:255'],
+            'gallon_type' => ['required', 'string', 'max:50'],
+            'gallon_count' => ['required', 'integer', 'min:1'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
     }
 
     protected function create(array $data)
     {
+        $nameParts = explode(' ', $data['name']);
+        $confirmationCode = strtoupper(uniqid('CONF-'));
 
-        $name = explode(' ', $data['name']);
-
-        // Create the user and generate the QR code
+        // ✅ Create new customer account with QR token
         $user = User::create([
-            'firstname' => $name[0] ?? '',
-            'lastname' => $name[1] ?? '',
+            'firstname' => $nameParts[0] ?? '',
+            'lastname' => $nameParts[1] ?? '',
             'name' => $data['name'],
             'email' => $data['email'],
-            'user_type' => 'client',  // Set user type to client for customers
+            'contact' => $data['contact'],
+            'address' => $data['address'],
+            'gallon_type' => $data['gallon_type'],
+            'gallon_count' => $data['gallon_count'],
+            'role' => 'customer',
             'password' => Hash::make($data['password']),
+            'approval_status' => 'pending',
+            'confirmation_code' => $confirmationCode,
+            'qr_token' => Str::uuid(), // unique login token
         ]);
 
-    // Generate the QR code (with the user's ID or any other unique value)
-    $qrCode = new QrCode($user->id); // The content of the QR code will be the user ID (or you can use something else)
-    $writer = new PngWriter();
+        /**
+         * ✅ Generate a “magic login” URL embedded in the QR
+         * Example: https://yourdomain.com/qr-login/{token}
+         */
+        $qrLoginUrl = url(env('NGROK_URL').'/qr-login/' . $user->qr_token);
 
-    // Step 1: Generate QR code and get the image data as a string
-    $imageData = $writer->write($qrCode)->getString();
+        // ✅ Generate QR image with the URL
+        $qrCode = new QrCode($qrLoginUrl);
+        $writer = new PngWriter();
+        $imageData = $writer->write($qrCode)->getString();
 
-    // Step 2: Set the path to save the QR code image
-    $path = 'qrcodes/' . $user->id . '.png';  // This will store the QR code in the qrcodes folder inside the storage/app/public directory
+        // ✅ Store QR code under /storage/app/public/qrcodes/
+        $path = 'qrcodes/' . $user->id . '.png';
+        Storage::put( $path, $imageData);
 
-    // Step 3: Save the QR code image to storage
-    Storage::put('public/' . $path, $imageData);
+        // ✅ Save QR code path to user record
+        $user->update(['qr_code' => $path]);
 
-    // Step 4: Save the QR code path in the user record
-    $user->qr_code = $path;
-    $user->save();
+        // ✅ Notify admin about pending user approval
+        Mail::to(env('ADMIN_EMAIL'))
+            ->send(new NewUserPendingApproval($user));
 
-    return $user;  // Return the created user
+        return $user;
     }
+    // Override registered() to prevent login if not approved
+    public function register(Request $request)
+    {
+        $this->validator($request->all())->validate();
+
+        $user = $this->create($request->all());
+        Mail::to($user->email)->send(new \App\Mail\RegistrationSuccessMail($user));
+
+
+        // ✅ Do NOT log them in — requires admin approval first
+        // Auth::login($user);
+
+        return redirect('/login')->with('success', 'Registration successful! Please check your email.');
+
+    }
+
 }

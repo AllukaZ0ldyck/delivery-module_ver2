@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\User;
+use App\Models\Admin;
 
 class LoginController extends Controller
 {
@@ -22,42 +23,52 @@ class LoginController extends Controller
 
         $credentials = $request->only('email', 'password');
 
-        // Customer login
+        // ✅ 1. CUSTOMER LOGIN
         if (Auth::guard('web')->attempt($credentials)) {
             $request->session()->regenerate();
+            $user = Auth::guard('web')->user();
 
-            // Check the role of the logged-in user using Auth::user()
-            if (Auth::user() && Auth::user()->role === 'delivery_personnel') {
-
-                // Redirect to the delivery personnel dashboard
-                return redirect()->route('delivery-personnel.index');
+            if ($user->approval_status !== 'approved') {
+                Auth::guard('web')->logout();
+                return redirect()->route('auth.index')
+                    ->with('pending', 'Your account is still pending admin approval.');
             }
 
-            // For Customer login, default redirect
             return redirect()->route('account-overview.index');
         }
 
-        // Admin login
-        if (class_exists(\App\Models\Admin::class)) {
-            if (Auth::guard('admins')->attempt($credentials)) {
-                $request->session()->regenerate();
-                return redirect()->route('admin.dashboard'); // Redirect to admin dashboard
+        // ✅ 2. ADMIN / DELIVERY / staff LOGIN
+        if (Auth::guard('admin')->attempt($credentials)) {
+            $request->session()->regenerate();
+            $admin = Auth::guard('admin')->user();
+
+            switch ($admin->user_type) {
+                case 'admin':
+                    return redirect()->route('admin.dashboard');
+                case 'delivery':
+                    return redirect()->route('delivery-personnel.index');
+                case 'staff':
+                    return redirect()->route('staff.index');
+                default:
+                    Auth::guard('admin')->logout();
+                    return redirect()->route('auth.index')->withErrors([
+                        'email' => 'Unauthorized access level.',
+                    ]);
             }
         }
 
-        // ---- FAILED LOGIN ----
-        return back()
-            ->withInput()
-            ->withErrors(['email' => 'Email or password is incorrect']);
+        // ❌ Invalid credentials
+        return back()->withErrors([
+            'email' => 'Email or password is incorrect.',
+        ])->onlyInput('email');
     }
+
 
     public function logout(Request $request)
     {
-        // logout all guards
+        // Logout both guards
         Auth::guard('web')->logout();
-        if (class_exists(\App\Models\Admin::class)) {
-            Auth::guard('admins')->logout();
-        }
+        Auth::guard('admin')->logout();
 
         $request->session()->invalidate();
         $request->session()->regenerateToken();

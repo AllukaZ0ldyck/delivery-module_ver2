@@ -7,9 +7,9 @@
                 <h1>Submit Ticket</h1>
             </div>
             <div class="inner-content mt-5 pb-5">
-                @if(!Auth::guard('admins')->check())
+                @if(!Auth::guard('admin')->check())
                 @php
-                    $prefix = Auth::guard('admins')->check() ? 'admin' : 'client';
+                    $prefix = Auth::guard('admin')->check() ? 'admin' : 'client';
                 @endphp
                 <form action="{{ route($prefix.'.support-ticket.create') }}" method="POST">
                     @csrf
@@ -77,7 +77,7 @@
         @endif
 
         const url = '{{ route(Route::currentRouteName()) }}';
-        const prefix = @json(Auth::guard('admins')->check() ? 'admin' : 'client'); 
+        const prefix = @json(Auth::guard('admin')->check() ? 'admin' : 'client'); 
 
         let table = $('table').DataTable({
             processing: true,

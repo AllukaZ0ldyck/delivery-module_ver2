@@ -12,14 +12,14 @@ class LoginController extends Controller
     {
         $credentials = $request->only('email', 'password');
 
-        if (auth()->guard('admins')->attempt($credentials)) {
+        if (auth()->guard('admin')->attempt($credentials)) {
 
-            $admin = auth()->guard('admins')->user();
+            $admin = auth()->guard('admin')->user();
 
             if ($admin->user_type !== 'delivery_man') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'You are not authorized as delivery_man',
+                    'message' => 'You are not authorized as Delivery Man',
                 ], 401);
             }
 

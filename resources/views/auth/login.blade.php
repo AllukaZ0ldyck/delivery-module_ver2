@@ -3,7 +3,9 @@
 @section('content')
 
 <div class="login">
-    <div class="container " id="container">
+    <div class="container" id="container">
+
+        {{-- SIGN UP CONTAINER --}}
         <div class="form-container sign-up-container">
             <form method="POST" action="{{ route('register') }}">
                 @csrf
@@ -14,57 +16,67 @@
                     <a href="#" class="social"><i class="fab fa-linkedin-in"></i></a>
                 </div>
                 <span>or use your email for registration</span>
+
                 <div class="w-100">
-                    <input type="text" class="form-control @error('name') is-invalid @enderror" name="name" value="{{ old('name') }}" placeholder="Name" />
+                    <input type="text" class="form-control @error('name') is-invalid @enderror" name="name"
+                        value="{{ old('name') }}" placeholder="Name" />
                     @error('name')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
+                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                     @enderror
                 </div>
+
                 <div class="w-100">
-                    <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" placeholder="Email" />
+                    <input type="email" class="form-control @error('email') is-invalid @enderror" name="email"
+                        value="{{ old('email') }}" placeholder="Email" />
                     @error('email')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
+                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                     @enderror
                 </div>
+
                 <div class="w-100">
-                    <input type="password" class="form-control @error('password') is-invalid @enderror" name="password" placeholder="Password" />
+                    <input type="password" class="form-control @error('password') is-invalid @enderror"
+                        name="password" placeholder="Password" />
                     @error('password')
-                        <span class="invalid-feedback" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
+                        <span class="invalid-feedback" role="alert"><strong>{{ $message }}</strong></span>
                     @enderror
                 </div>
+
                 <button class="mt-4">Sign Up</button>
             </form>
         </div>
+
+        {{-- SIGN IN CONTAINER --}}
         <div class="form-container sign-in-container">
             <form method="POST" action="{{ route('auth.login') }}">
                 @csrf
+
+                {{-- ✅ move alerts HERE (login side) --}}
+                @if (session('pending'))
+                    <div class="alert alert-warning text-center mt-3">
+                        {{ session('pending') }}
+                    </div>
+                @endif
+
+                @if ($errors->any())
+                    <div class="alert alert-danger text-center mt-3">
+                        {{ $errors->first() }}
+                    </div>
+                @endif
+
                 <h1 class="fw-bold mb-2">Sign in</h1>
                 <span>or use your account</span>
+
                 <div class="w-100">
-                    <input type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" placeholder="Email" />
-                    @error('email')
-                        <span class="invalid-feedback mb-3" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
+                    <input type="email" class="form-control @error('email') is-invalid @enderror" name="email"
+                        value="{{ old('email') }}" placeholder="Email" />
                 </div>
+
                 <div class="w-100">
-                    <input type="password" class="form-control @error('password') is-invalid @enderror" name="password" placeholder="Password" />
-                    @error('password')
-                        <span class="invalid-feedback mb-3" role="alert">
-                            <strong>{{ $message }}</strong>
-                        </span>
-                    @enderror
+                    <input type="password" class="form-control @error('password') is-invalid @enderror"
+                        name="password" placeholder="Password" />
                 </div>
-                <button type="submit" class="mt-4">
-                    {{ __('Login') }}
-                </button>
+
+                <button type="submit" class="mt-4">{{ __('Login') }}</button>
 
                 @if (Route::has('password.request'))
                     <a class="btn btn-link" href="{{ route('password.request') }}">
@@ -73,6 +85,7 @@
                 @endif
             </form>
         </div>
+
         <div class="overlay-container">
             <div class="overlay">
                 <div class="overlay-panel overlay-left">
@@ -81,7 +94,7 @@
                     <button class="ghost" id="signIn">Sign In</button>
                 </div>
                 <div class="overlay-panel overlay-right">
-                    <img src="{{ asset(config('app.product') === 'novustream' ? 'images/water_delivery.webp' : 'images/water_delivery.webp') }}" alt="" class="w-100">
+                    <img src="{{ asset('images/water_delivery.webp') }}" alt="" class="w-100">
                     <p>Create Account</p>
                     <a href="/register" class="btn btn-primary fw-bold text-white border-2 fs-6 px-5 py-3 text-uppercase fw-bold" id="signUp">Sign Up</a>
                 </div>
@@ -89,26 +102,14 @@
         </div>
     </div>
 </div>
+
 <style>
-    @media(min-width: 0px) and (max-width: 600px) {
-        .overlay-container {
-            display: none;
-        }
-
-        .login {
-            width: 90%;
-            display: flex;
-            margin: auto !important;
-            justify-content: center;
-        }
-
-        .login .sign-in-container {
-            width: 100%;
-        }
-
-        .login form {
-            padding: 20px;
-        }
-    }
+@media (min-width: 0px) and (max-width: 600px) {
+    .overlay-container { display: none; }
+    .login { width: 90%; display: flex; margin: auto !important; justify-content: center; }
+    .login .sign-in-container { width: 100%; }
+    .login form { padding: 20px; }
+}
 </style>
+
 @endsection

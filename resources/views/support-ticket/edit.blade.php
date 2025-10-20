@@ -6,7 +6,7 @@
             <div class="main-header d-flex justify-content-between">
                 <h1>Resolve Ticket</h1>
                 @php
-                    $prefix = Auth::guard('admins')->check() ? 'admin' : 'client';
+                    $prefix = Auth::guard('admin')->check() ? 'admin' : 'client';
                 @endphp
                 <a href="{{route($prefix . '.support-ticket.create')}}" class="btn btn-outline-primary px-5 py-3 text-uppercase">
                     Go Back
@@ -94,7 +94,7 @@
         $(document).on('click', '.btn-view', function() {
 
             const id = $(this).data('id');
-            const prefix = @json(Auth::guard('admins')->check() ? 'admin' : 'client'); 
+            const prefix = @json(Auth::guard('admin')->check() ? 'admin' : 'client'); 
             const url = `{{ url('${prefix}/support-ticket') }}/${id}`;
 
             show(url)

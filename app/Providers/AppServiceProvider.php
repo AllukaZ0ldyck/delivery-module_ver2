@@ -28,7 +28,7 @@ class AppServiceProvider extends ServiceProvider
 
         if(Request::is('admin/*')) {
 
-            Auth::shouldUse('admins');
+            Auth::shouldUse('admin');
 
             Gate::define('admin', function ($user) {
                 return $user->user_type === 'admin';
@@ -38,8 +38,8 @@ class AppServiceProvider extends ServiceProvider
                 return $user->user_type === 'delivery_man';
             });
 
-            Gate::define('cashier', function ($user) {
-                return $user->user_type === 'cashier';
+            Gate::define('staff', function ($user) {
+                return $user->user_type === 'staff';
             });
 
         }

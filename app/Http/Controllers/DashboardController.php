@@ -19,7 +19,7 @@ class DashboardController extends Controller
                 return response()->view('others.restricted');
             }
 
-            if (!Gate::allows('admin') && !Gate::allows('cashier')) {
+            if (!Gate::allows('admin') && !Gate::allows('staff')) {
                 abort(403, 'Unauthorized');
             }
 

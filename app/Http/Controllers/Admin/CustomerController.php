@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Customer;
 use Illuminate\Http\Request;
 
 class CustomerController extends Controller
@@ -11,17 +12,32 @@ class CustomerController extends Controller
     // Show list of all customers
     public function index()
     {
-        // Retrieve all customers
-        // $customers = User::all();
-        $customers = \App\Models\User::where('role', '!=', 'delivery_personnel')->get();
+        try {
+            // Always start with a safe empty collection
+            $customers = collect();
+
+            // ✅ Fetch only approved customers
+            $customers = \App\Models\User::where('role', 'customer')
+                ->where('approval_status', 'approved')
+                ->with('orders') // eager load orders relationship
+                ->orderBy('name', 'asc')
+                ->get();
+
+        } catch (\Throwable $e) {
+            \Log::error('Error loading customers list: '.$e->getMessage());
+            $customers = collect(); // fallback
+        }
+
         return view('admin.customers.index', compact('customers'));
     }
+
+
 
     // Show the details of a single customer
     public function show($id)
     {
         // Find the customer by ID
-        $customer = User::findOrFail($id);
+        $customer = \App\Models\User::with(['orders', 'borrowedGallons'])->findOrFail($id);
         return view('admin.customers.show', compact('customer'));
     }
 
@@ -38,26 +54,41 @@ class CustomerController extends Controller
     {
         $customer = User::findOrFail($id);
 
-        // Validate incoming data
+        // ✅ Validate incoming data
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:users,email,' . $id,
-            'password' => 'nullable|min:6|confirmed',
+            'name'            => 'required|string|max:255',
+            'email'           => 'required|email|unique:users,email,' . $id,
+            'password'        => 'nullable|min:6|confirmed',
+            'contact_no'      => 'nullable|string|max:20',
+            'address'         => 'nullable|string|max:255',
+            'gallon_type'     => 'nullable|string|max:255',
+            'gallon_count'    => 'nullable|integer|min:0',
+            'approval_status' => 'nullable|in:pending,approved,rejected',
+            'status'          => 'nullable|in:active,archived',
         ]);
 
-        // Update the customer information
-        $customer->name = $request->input('name');
-        $customer->email = $request->input('email');
+        // ✅ Update main info
+        $customer->name            = $request->input('name');
+        $customer->email           = $request->input('email');
+        $customer->contact_no      = $request->input('contact_no');
+        $customer->address         = $request->input('address');
+        $customer->gallon_type     = $request->input('gallon_type');
+        $customer->gallon_count    = $request->input('gallon_count');
+        $customer->approval_status = $request->input('approval_status');
+        $customer->status          = $request->input('status');
 
-        // Only update the password if it's provided
-        if ($request->has('password') && $request->input('password') !== '') {
+        // ✅ Update password only if provided
+        if ($request->filled('password')) {
             $customer->password = bcrypt($request->input('password'));
         }
 
         $customer->save();
 
-        return redirect()->route('admin.customers.index')->with('success', 'Customer updated successfully');
+        return redirect()
+            ->route('admin.customers.index')
+            ->with('success', 'Customer updated successfully!');
     }
+
 
     // Delete a customer
     public function destroy($id)
@@ -91,6 +122,8 @@ class CustomerController extends Controller
 
         return redirect()->route('orders.index')->with('success', 'Reactivation request submitted.');
     }
+
+
 
 
 }
