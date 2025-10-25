@@ -7,24 +7,25 @@ use Illuminate\Http\Request;
 
 class LoginController extends Controller
 {
-    
+
     public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
-    
-        if (auth()->guard('admins')->attempt($credentials)) {
-            
-            $admin = auth()->guard('admins')->user();
 
-            if($admin->user_type !== 'technician') {
+        if (auth()->guard('admin')->attempt($credentials)) {
+
+            $admin = auth()->guard('admin')->user();
+
+            if ($admin->user_type !== 'delivery_man') {
                 return response()->json([
                     'status' => 'error',
-                    'message' => 'You are not authorized technician',
+                    'message' => 'You are not authorized as Delivery Man',
                 ], 401);
             }
 
-            $token = $admin->createToken('authToken', ['role:technician'])->plainTextToken;
-    
+            // Use PHP associative array syntax (=>) for abilities/metadata
+            $token = $admin->createToken('authToken', ['role' => 'delivery_man'])->plainTextToken;
+
             return response()->json([
                 'status' => 'success',
                 'token' => $token,
@@ -43,12 +44,12 @@ class LoginController extends Controller
         if ($request->user()) {
             $request->user()->tokens()->delete();
         }
-        
+
         return response()->json([
             'status' => 'success',
             'message' => 'Logged out',
         ], 200);
     }
-    
+
 
 }

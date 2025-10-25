@@ -32,7 +32,7 @@ class SupportTicketController extends Controller {
     }
 
     public function create(Request $request) {
-        $user = !Auth::guard('admins')->check() ? 'clients' : 'admins';
+        $user = !Auth::guard('admin')->check() ? 'clients' : 'admins';
         $user_id = Auth::user()->id;
         $data = $user == 'clients' ? $this->supportTicketService->getTickets($user_id) : $this->supportTicketService->getTickets();
         return $request->ajax() 
@@ -185,7 +185,7 @@ class SupportTicketController extends Controller {
                 $deleteBtn = '<button type="button" class="btn-delete btn btn-danger fw-bold text-uppercase px-4 py-2 text-white remove-btn" data-id="' . $row->id . '">Delete</button>';
                 $respondBtn = '<a href="'.route($prefix . '.support-ticket.edit', ['ticket' => $row->id]).'" class="text-uppercase px-4 py-2 fw-bold btn btn-success text-white text"" data-id="'.$row->id.'">Respond</a>';
 
-                if (Auth::guard('admins')->check()) { 
+                if (Auth::guard('admin')->check()) { 
                     
                     return Auth::user()->user_type == 'client'
                         ? "<div class='d-flex gap-2'>{$viewBtn} {$deleteBtn}</div>"

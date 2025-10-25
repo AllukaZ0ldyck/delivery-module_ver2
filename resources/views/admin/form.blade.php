@@ -9,16 +9,16 @@
                 @else
                     <h1>Add New Admin</h1>
                 @endif
-                <a href="{{route('admins.index')}}" class="btn btn-outline-primary px-5 py-3 text-uppercase">
+                <a href="{{route('admin.index')}}" class="btn btn-outline-primary px-5 py-3 text-uppercase">
                     Go Back
                 </a>
             </div>
             <div class="inner-content mt-5">
-                <form action="{{ isset($data) ? route('admins.update', $data->id) : route('admins.store') }}" method="POST">
+                <form action="{{ isset($data) ? route('admin.update', $data->id) : route('admin.store') }}" method="POST">
                     @csrf
                     @if(isset($data))
                         @method('PUT')
-                    @endif       
+                    @endif
                     <div class="row d-flex justify-content-center">
                         <div class="col-12 col-md-7 mb-3">
                             <div class="card shadow border-0 p-2">

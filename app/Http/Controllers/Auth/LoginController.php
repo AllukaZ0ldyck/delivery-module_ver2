@@ -47,11 +47,11 @@ class LoginController extends Controller
             return '/dashboard';
         }
 
-        if(auth()->user()->user_type == 'concessionaire') {
+        if(auth()->user()->user_type == 'customer') {
             return 'my/overview';
         }
 
-        if(auth()->user()->user_type == 'technician') {
+        if(auth()->user()->user_type == 'delivery') {
             return '/reading';
         }
     }

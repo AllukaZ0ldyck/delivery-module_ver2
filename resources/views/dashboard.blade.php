@@ -20,7 +20,7 @@
                     <div class="card border-primary border-2 shadow p-3">
                         <div class="card-body">
                             <h4 class="mb-3 text-uppercase fw-medium">Clients</h4>
-                            <h1>{{ number_format($data['concessionaires'] ?? 0) }}</h1>
+                            <h1>{{ number_format($data['customers'] ?? 0) }}</h1>
                         </div>
                     </div>
                 </div>

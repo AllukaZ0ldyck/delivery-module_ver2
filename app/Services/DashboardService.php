@@ -11,13 +11,13 @@ class DashboardService {
     public static function getAllUsers() {
 
         $users = User::count();
-        $admins = Admin::where('user_type', '!=', 'technician')->count();
-        $technician = Admin::where('user_type', 'technician')->count();
+        $admins = Admin::where('user_type', '!=', 'delivery_man')->count();
+        $technician = Admin::where('user_type', 'delivery_man')->count();
 
         return [
             'admins' => $admins,
             'technicians' => $technician,
-            'concessionaires' => $users,
+            'customers' => $users,
         ];
 
     }

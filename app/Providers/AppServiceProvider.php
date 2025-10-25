@@ -25,37 +25,37 @@ class AppServiceProvider extends ServiceProvider
     public function boot(Request $request): void
     {
         Paginator::useBootstrapFive();
-        
+
         if(Request::is('admin/*')) {
 
-            Auth::shouldUse('admins');
+            Auth::shouldUse('admin');
 
             Gate::define('admin', function ($user) {
                 return $user->user_type === 'admin';
             });
-            
-            Gate::define('technician', function ($user) {
-                return $user->user_type === 'technician';
+
+            Gate::define('delivery_man', function ($user) {
+                return $user->user_type === 'delivery_man';
             });
-            
-            Gate::define('cashier', function ($user) {
-                return $user->user_type === 'cashier';
+
+            Gate::define('staff', function ($user) {
+                return $user->user_type === 'staff';
             });
-    
+
         }
 
-        if(Request::is('concessionaire/*')) {
+        if(Request::is('customer/*')) {
             Auth::shouldUse('web');
 
-            Gate::define('concessionaire', function ($user) {
+            Gate::define('customer', function ($user) {
                 return true;
             });
 
-            
-            
+
+
         }
 
-        
-        
+
+
     }
 }

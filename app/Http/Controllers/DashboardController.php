@@ -15,11 +15,11 @@ class DashboardController extends Controller
     public function __construct(DashboardService $dashboardService, MeterService $meterService)
     {
         $this->middleware(function ($request, $next) {
-            if (Gate::allows('technician') || Gate::allows('inspector')) {
+            if (Gate::allows('delivery_man') || Gate::allows('inspector')) {
                 return response()->view('others.restricted');
             }
 
-            if (!Gate::allows('admin') && !Gate::allows('cashier')) {
+            if (!Gate::allows('admin') && !Gate::allows('staff')) {
                 abort(403, 'Unauthorized');
             }
 
@@ -50,7 +50,7 @@ class DashboardController extends Controller
 
         $data = [
             'admins' => $users['admins'] ?? [],
-            'concessionaires' => $users['concessionaires'] ?? [],
+            'customers' => $users['customers'] ?? [],
             'technicians' => $users['technicians'] ?? [],
             'total_readings' => $readings->count(),
             'total_transactions' => $total_transactions,

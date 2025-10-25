@@ -21,7 +21,7 @@ class UpdateClientRequest extends FormRequest
      */
     public function rules(): array
     {
-        $id = $this->route('concessionaire');
+        $id = $this->route('customer');
         return [
             'name' => 'required|string|max:255',
             'email' => 'required|unique:users,email,' . $id,
@@ -57,7 +57,7 @@ class UpdateClientRequest extends FormRequest
             'name.required' => 'The name field is required.',
             'name.string' => 'The name must be a valid string.',
             'name.max' => 'The name must not exceed 255 characters.',
-            
+
             'address.required' => 'The address field is required.',
             'address.string' => 'The address must be a valid string.',
             'address.max' => 'The address must not exceed 255 characters.',
