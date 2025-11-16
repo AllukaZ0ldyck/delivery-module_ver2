@@ -360,3 +360,13 @@ Route::middleware(['auth'])->prefix('customer/my')->group(function () {
 
 
     });
+
+
+Route::get('/test-email', function () {
+    \Mail::raw('Test email from Laravel using Gmail SMTP', function ($message) {
+        $message->to('jeffprodev@gmail.com')
+                ->subject('Test Email');
+    });
+
+    return 'Email Sent!';
+});

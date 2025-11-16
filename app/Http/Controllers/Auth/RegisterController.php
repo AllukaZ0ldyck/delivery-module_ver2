@@ -33,8 +33,6 @@ class RegisterController extends Controller
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
             'contact' => ['required', 'string', 'max:20', 'unique:users,contact'],
             'address' => ['required', 'string', 'max:255'],
-            'gallon_type' => ['required', 'string', 'max:50'],
-            'gallon_count' => ['required', 'integer', 'min:1'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
     }
@@ -52,14 +50,23 @@ class RegisterController extends Controller
             'email' => $data['email'],
             'contact' => $data['contact'],
             'address' => $data['address'],
-            'gallon_type' => $data['gallon_type'],
-            'gallon_count' => $data['gallon_count'],
             'role' => 'customer',
             'password' => Hash::make($data['password']),
             'approval_status' => 'pending',
             'confirmation_code' => $confirmationCode,
             'qr_token' => Str::uuid(), // unique login token
         ]);
+
+        // Save multiple gallons
+        if (!empty($data['gallons'])) {
+            foreach ($data['gallons'] as $gallon) {
+                \App\Models\UserGallon::create([
+                    'user_id' => $user->id,
+                    'gallon_type' => $gallon['type'],
+                    'quantity' => $gallon['qty'],
+                ]);
+            }
+        }
 
         /**
          * ✅ Generate a “magic login” URL embedded in the QR

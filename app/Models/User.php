@@ -83,4 +83,10 @@ class User extends Authenticatable
         return $this->hasMany(\App\Models\BorrowedGallon::class, 'user_id');
     }
 
+    public function gallons()
+    {
+        return $this->hasMany(UserGallon::class);
+    }
+
+
 }

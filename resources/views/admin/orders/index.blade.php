@@ -34,6 +34,7 @@
                 <th>Quantity</th>
                 <th>Status</th>
                 <th>Delivery Date</th>
+                <th>Address</th>
                 <th>Total</th>
                 <th>Actions</th>
                 <th>Delivery Personnel</th>
@@ -83,6 +84,7 @@
                     </span>
                 </td>
                 <td>{{ \Carbon\Carbon::parse($order->delivery_date)->format('M d, Y') }}</td>
+                <td>{{ $order->user->address ?? 'N/A' }}</td>
 
 
                 <td>₱{{ number_format($order->total_price, 2) }}</td>
