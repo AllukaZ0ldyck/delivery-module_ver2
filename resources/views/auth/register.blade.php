@@ -178,5 +178,33 @@
         }
     });
 </script>
+<script>
+document.querySelector("form").addEventListener("submit", function(e) {
+    const rows = document.querySelectorAll(".gallon-row");
+    
+    if (rows.length < 1) {
+        alert("Please add at least 1 gallon type.");
+        e.preventDefault();
+        return;
+    }
+
+    let valid = true;
+
+    rows.forEach(row => {
+        const type = row.querySelector("select").value;
+        const qty = row.querySelector("input[type='number']").value;
+
+        if (type === "" || qty < 1) {
+            valid = false;
+        }
+    });
+
+    if (!valid) {
+        alert("Each gallon must have a type and a quantity of at least 1.");
+        e.preventDefault();
+    }
+});
+</script>
+
 
 @endsection

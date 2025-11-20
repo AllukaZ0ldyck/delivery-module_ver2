@@ -39,13 +39,13 @@
                         <a href="{{ route('admin.products.edit', $product->id) }}" class="btn btn-sm btn-warning">Edit</a>
 
                         {{-- Toggle Active/Maintenance --}}
-                        <form action="{{ route('admin.products.toggle', $product->id) }}" method="POST" style="display:inline;">
+                        <!-- <form action="{{ route('admin.products.toggle', $product->id) }}" method="POST" style="display:inline;">
                             @csrf
                             @method('PATCH')
                             <button type="submit" class="btn btn-sm {{ $product->is_active ? 'btn-secondary' : 'btn-success' }}">
                                 {{ $product->is_active ? 'Set to Maintenance' : 'Activate' }}
                             </button>
-                        </form>
+                        </form> -->
 
                         <form action="{{ route('admin.products.destroy', $product->id) }}" method="POST" style="display:inline;">
                             @csrf @method('DELETE')

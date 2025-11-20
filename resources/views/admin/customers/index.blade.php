@@ -46,11 +46,11 @@
                 <td>
                     <a href="{{ route('admin.customers.show', $customer->id) }}" class="btn btn-info btn-sm">View</a>
                     <a href="{{ route('admin.customers.edit', $customer->id) }}" class="btn btn-warning btn-sm">Edit</a>
-                    <form action="{{ route('admin.customers.destroy', $customer->id) }}" method="POST" style="display:inline;">
+                    <!-- <form action="{{ route('admin.customers.destroy', $customer->id) }}" method="POST" style="display:inline;">
                         @csrf
                         @method('DELETE')
                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                    </form>
+                    </form> -->
                 </td>
             </tr>
         @endforeach

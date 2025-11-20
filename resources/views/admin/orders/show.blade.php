@@ -26,7 +26,7 @@
                 <table class="table table-bordered">
                     <thead class="table-light">
                         <tr>
-                            <th>Water Type</th>
+                            <th>Water Gallon Type</th>
                             <th>Quantity</th>
                             <th>Unit Price</th>
                             <th>Total</th>
@@ -45,7 +45,7 @@
                 </table>
             @else
                 {{-- Backward compatibility --}}
-                <p><strong>Water Type:</strong> {{ $order->product->name ?? 'N/A' }}</p>
+                <p><strong>Water Gallon Type:</strong> {{ $order->product->name ?? 'N/A' }}</p>
                 <p><strong>Quantity:</strong> {{ $order->quantity ?? 0 }}</p>
             @endif
 
@@ -125,6 +125,9 @@
         </div>
     </div>
 
-    <a href="{{ route('admin.orders.index') }}" class="btn btn-secondary">← Back to Orders</a>
+    <a href="{{ auth()->user()->role === 'admin' ? route('admin.orders.index') : route('orders.index') }}" class="btn btn-secondary">
+        ← Back to Orders
+    </a>
+
 </div>
 @endsection

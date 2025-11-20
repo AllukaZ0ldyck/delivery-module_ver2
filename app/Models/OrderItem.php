@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Product;
 
 class OrderItem extends Model
 {
@@ -17,6 +18,7 @@ class OrderItem extends Model
 
     public function product()
     {
-        return $this->belongsTo(\App\Models\Product::class, 'product_id');
+        return $this->belongsTo(Product::class);
     }
+
 }

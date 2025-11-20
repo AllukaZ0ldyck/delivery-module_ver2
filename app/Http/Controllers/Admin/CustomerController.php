@@ -70,7 +70,7 @@ class CustomerController extends Controller
         // ✅ Update main info
         $customer->name            = $request->input('name');
         $customer->email           = $request->input('email');
-        $customer->contact_no      = $request->input('contact_no');
+        $customer->contact      = $request->input('contact_no');
         $customer->address         = $request->input('address');
         $customer->gallon_type     = $request->input('gallon_type');
         $customer->gallon_count    = $request->input('gallon_count');

@@ -34,6 +34,12 @@ class RegisterController extends Controller
             'contact' => ['required', 'string', 'max:20', 'unique:users,contact'],
             'address' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+             // ensure gallons exists
+            'gallons' => ['required', 'array', 'min:1'],
+
+            // each gallon entry must have type & quantity
+            'gallons.*.type' => ['required', 'string'],
+            'gallons.*.qty'  => ['required', 'integer', 'min:1'],
         ]);
     }
 
@@ -107,5 +113,6 @@ class RegisterController extends Controller
         return redirect('/login')->with('success', 'Registration successful! Please check your email.');
 
     }
+    
 
 }

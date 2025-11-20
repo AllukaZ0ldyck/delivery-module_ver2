@@ -99,6 +99,9 @@
                     {{-- ⚙️ Actions --}}
                     <td>
                         <a href="{{ route('orders.show', $order->id) }}" class="btn btn-info btn-sm">View</a>
+                        @if($order->status == 'pending')
+                            <a href="{{ route('orders.edit', $order->id) }}" class="btn btn-warning btn-sm">Edit</a>
+                        @endif
 
                         @if($order->status == 'pending')
                             <form action="{{ route('orders.cancel', $order->id) }}" method="POST" style="display:inline;">
@@ -107,12 +110,12 @@
                             </form>
                         @endif
 
-                        @if($order->payment_method === 'COD' && $order->payment_status === 'unpaid')
+                        <!-- @if($order->payment_method === 'COD' && $order->payment_status === 'unpaid')
                             <form action="{{ route('orders.simulatePayment', $order->id) }}" method="POST" style="display:inline;">
                                 @csrf
                                 <button type="submit" class="btn btn-primary btn-sm">Simulate Payment</button>
                             </form>
-                        @endif
+                        @endif -->
                     </td>
                 </tr>
             @empty

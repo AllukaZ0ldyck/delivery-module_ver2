@@ -109,6 +109,10 @@ Route::middleware(['auth'])->prefix('customer')->group(function () {
     // Route::match(['get', 'post'], '/orders/{order}/simulate-payment', [OrderController::class, 'simulatePayment'])->name('orders.simulatePayment');
     Route::post('/orders/{order}/simulate-payment', [OrderController::class, 'simulatePayment'])->name('orders.simulatePayment');
 
+    Route::get('/customer/orders/{order}/edit', [OrderController::class, 'edit'])->name('orders.edit');
+    Route::post('/customer/orders/{order}/update', [OrderController::class, 'update'])->name('orders.update');
+
+
 
     // Borrow Gallons
     Route::get('/borrow-gallon', [BorrowedGallonController::class, 'create'])->name('borrow-gallon.create');

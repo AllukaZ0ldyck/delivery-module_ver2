@@ -30,7 +30,7 @@
             <tr>
                 <th>Order ID</th>
                 <th>Customer</th>
-                <th>Water Type</th>
+                <th>Water Gallon Type</th>
                 <th>Quantity</th>
                 <th>Status</th>
                 <th>Delivery Date</th>

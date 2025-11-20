@@ -112,6 +112,70 @@ class OrderController extends Controller
         return redirect()->route('orders.index')->with('success', 'Order placed successfully!');
     }
 
+    public function edit(Order $order)
+    {
+        if ($order->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($order->status !== 'pending') {
+            return back()->with('error', 'Only pending orders can be edited.');
+        }
+
+        $products = Product::all();
+
+        return view('orders.edit', compact('order', 'products'));
+    }
+
+
+    public function update(Request $request, Order $order)
+    {
+        if ($order->user_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($order->status !== 'pending') {
+            return back()->with('error', 'Only pending orders can be edited.');
+        }
+
+        $request->validate([
+            'items.*.product_id' => 'required|exists:products,id',
+            'items.*.quantity' => 'required|integer|min:1',
+            'delivery_date' => 'required|date',
+        ]);
+
+        // delete old items
+        $order->items()->delete();
+
+        // add updated items
+        foreach ($request->items as $item) {
+            $product = Product::find($item['product_id']);
+            $quantity = $item['quantity'];
+
+            $order->items()->create([
+                'product_id'  => $product->id,
+                'quantity'    => $quantity,
+                'unit_price'  => $product->price,
+                'total_price' => $product->price * $quantity,
+            ]);
+        }
+
+
+        // recalculate total price
+        $total = $order->items->sum(function($i) {
+            return $i->unit_price * $i->quantity;
+        });
+
+        $order->total_price = $order->items->sum('total_price');
+        $order->delivery_date = $request->delivery_date;
+        $order->save();
+
+        return redirect()->route('orders.show', $order->id)
+                        ->with('success', 'Order updated successfully!');
+    }
+
+
+
 
 
     /**

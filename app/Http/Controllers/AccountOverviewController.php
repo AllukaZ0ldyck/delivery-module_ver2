@@ -24,11 +24,18 @@ class AccountOverviewController extends Controller
         $totalDue = Order::where('user_id', $user->id)->where('status', 'pending')->sum('total_price');
 
         // Recent orders
-        $recentOrders = Order::with('product')
-            ->where('user_id', $user->id)
-            ->latest()
-            ->take(5)
-            ->get();
+        // $recentOrders = Order::with('product')
+        //     ->where('user_id', $user->id)
+        //     ->latest()
+        //     ->take(5)
+        //     ->get();
+
+        $recentOrders = Order::with('items.product')
+        ->where('user_id', $user->id)
+        ->latest()
+        ->take(5)
+        ->get();
+
 
         return view('account-overview.index', compact(
             'totalOrders',

@@ -16,7 +16,7 @@
             <nav class="header-navigation-links d-flex gap-4">
                 {{-- Admin Links --}}
                 @can('admin')
-                    <a href="{{ route('admin.dashboard') }}">Overview</a>
+                    <a href="{{ route('admin.dashboard') }}">Dashboard</a>
                     <a href="{{ route('admin.orders.index') }}">Orders</a>
                     <a href="{{ route('admin.products.index') }}">Products</a>
                     <a href="{{ route('admin.borrowed-gallons') }}">Borrowed Gallons</a>
@@ -44,7 +44,7 @@
 
                 {{-- Customer Links --}}
                 @if(Auth::user() && Auth::user()->role === 'customer')
-                    <a href="{{ route('account-overview.index') }}">Overview</a>
+                    <a href="{{ route('account-overview.index') }}">Dashboard</a>
                     <a href="{{ route('orders.index') }}">My Orders</a>
                     <div class="dropdown px-0 mx-0">
                         <button class="border-0 bg-transparent dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">

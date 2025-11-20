@@ -22,22 +22,26 @@ class BorrowedGallonController extends Controller
 
     public function store(Request $request)
     {
-        // dd('Reached BorrowedGallon@store', $request->all());
         $request->validate([
-            'gallon_type' => 'required|string|max:255',
-            'gallon_count' => 'required|integer|min:1',
-            'due_date' => 'required|date|after_or_equal:today',
+            'borrows' => 'required|array|min:1',
+
+            'borrows.*.gallon_type'  => 'required|string|max:255',
+            'borrows.*.gallon_count' => 'required|integer|min:1',
+            'borrows.*.due_date'     => 'required|date|after_or_equal:today',
         ]);
 
-        BorrowedGallon::create([
-            'user_id' => Auth::id(),
-            'gallon_type' => $request->gallon_type,
-            'gallon_count' => $request->gallon_count,
-            'due_date' => $request->due_date,
-            'status' => 'pending', // requires admin approval
-        ]);
+        foreach ($request->borrows as $borrow) {
+            BorrowedGallon::create([
+                'user_id'      => auth()->id(),
+                'gallon_type'  => $borrow['gallon_type'],
+                'gallon_count' => $borrow['gallon_count'],
+                'due_date'     => $borrow['due_date'],
+                'status'       => 'pending',
+            ]);
+        }
 
         return redirect()->route('borrow-gallon.index')
-                         ->with('success', 'Your borrow request has been submitted for approval.');
+                        ->with('success', 'Your borrow request has been submitted for approval.');
     }
+
 }
